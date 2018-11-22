@@ -1,2 +1,2 @@
-# BuildingStyleClassifier
-Classify images of buildings by style
+# Toronto Walks
+Walk generator for Toronto points of interest
