@@ -41,29 +41,30 @@ def create_db_tables(db):
     db.execute("""
     CREATE TABLE IF NOT EXISTS points_of_interest (poi_id BIGSERIAL PRIMARY KEY,
         name text,
-        build_year int, demolished_year int,
+        build_year text, demolished_year text,
         address text, latitude float, longitude float,
-        source text, external_url text, details text
-    )
+        source text, external_url text, details text,
+        image_url text, heritage_status text, current_use text,
+        poi_type text)
     """)
 
     # create architectural styles TABLE
     db.execute("""
-    CREATE TABLE IF NOT EXISTS architectural_styles (poi_id int PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS architectural_styles (poi_id int,
         style text
     )
     """)
 
     # create architects TABLE
     db.execute("""
-    CREATE TABLE IF NOT EXISTS architects (poi_id int PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS architects (poi_id int ,
         architect_name text
     )
     """)
 
     # create categories TABLE
     db.execute("""
-    CREATE TABLE IF NOT EXISTS poi_categories (poi_id int PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS poi_categories (poi_id int,
         category text
     )
     """)
