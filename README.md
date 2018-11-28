@@ -30,7 +30,7 @@ One of my favourite pass times is to wander through a new neighbourhood or area 
 
 ## Database Design
 
-![ERD](docs\TorontoWalks_ERD.png)
+![ERD](https://github.com/ag2816/TorontoWalks/blob/master/docs/TorontoWalks_ERD.png)
 
 ## Metric of Success
 
