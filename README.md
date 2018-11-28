@@ -20,7 +20,7 @@ One of my favourite pass times is to wander through a new neighbourhood or area 
 
 ### Proposed Flow of Application
 
-![TorontoWalks_Flow](docs\TorontoWalks_Flow.png)
+![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/TorontoWalks_Flow.png)
 
 ## Data Sources
 
