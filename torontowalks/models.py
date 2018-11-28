@@ -26,17 +26,17 @@ DB_PORT=os.getenv("DB_PORT")
 DB_IP=os.getenv("DB_IP")
 
 
-def _load_db_vars():
-    load_dotenv(find_dotenv())
-    # load environment variables
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    DB_USER=os.getenv("DB_USER")
-    DB_PASS = os.getenv("DB_PASS")
-    DEBUG= os.getenv("DEBUG")
-    DB_NAME=os.getenv("DB_NAME")
-    DB_SERVICE=os.getenv("DB_SERVICE")
-    DB_PORT=os.getenv("DB_PORT")
-    DB_IP=os.getenv("DB_IP")
+# def _load_db_vars():
+#     load_dotenv(find_dotenv())
+#     # load environment variables
+#     SECRET_KEY = os.getenv("SECRET_KEY")
+#     DB_USER=os.getenv("DB_USER")
+#     DB_PASS = os.getenv("DB_PASS")
+#     DEBUG= os.getenv("DEBUG")
+#     DB_NAME=os.getenv("DB_NAME")
+#     DB_SERVICE=os.getenv("DB_SERVICE")
+#     DB_PORT=os.getenv("DB_PORT")
+#     DB_IP=os.getenv("DB_IP")
 
 def connect_db():
     #_load_db_vars()
