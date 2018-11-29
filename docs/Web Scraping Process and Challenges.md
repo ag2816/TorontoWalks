@@ -12,7 +12,7 @@ I scraped this form and called each style page in turn, using the syntax: http:/
 
 ### Style Pages
 
-I ran into a couple issues
+I ran into a couple **challenges**
 
 - the style page called with the "MainStyle" parameter redirects to a pid url, which has to be followed
 - I eventually realized that each style page loaded at most 50 images at time and that you had to keep scrolling to get the rest of the records.  So I had to switch to using Selenium to grab those records
@@ -27,8 +27,50 @@ example url: http://www.acotoronto.ca/show_building.php?BuildingID=3883
 
 ![Example Building Page](C:\Users\blahjays\Documents\GitHubCode\Personal_Public\BuildingStyleClassifier\docs\aco_toronto_building_page.png)
 
-The labels Name & Location, Status, Year Completed etc are stored in divs with class X, while the values immediately follow those labels in a div with class Y.  Unfortunately the value divs have no identifying information of their own
+**Challenge**: The labels Name & Location, Status, Year Completed etc are stored in divs with class building_info, while the values immediately follow those labels in a div with class building_info2.  Unfortunately the value divs have no identifying information of their own
 
 ![example html](C:\Users\blahjays\Documents\GitHubCode\Personal_Public\BuildingStyleClassifier\docs\aco_toront_building_page_html.png)
 
-hh
+so I set up a dictionary with the labels of interest and looped through all the divs with class building_info.  When I found a match, I grabbed the text of the next tag
+
+## Site 2: Archidont 
+
+URL: <http://archindont.torontopubliclibrary.ca>
+
+![achidont landing page](C:\Users\blahjays\Documents\GitHubCode\Personal_Public\TorontoWalks\docs\Archidont_landing_page.png)
+
+This site groups buildings by types which you can loop through alphabetically
+
+![](C:\Users\blahjays\Documents\GitHubCode\Personal_Public\TorontoWalks\docs\archidont_alphabetical_by_type_page.png)
+
+When you click into a specific building type, the page lists details about all the buildings of that type and separates them with an image
+
+![archidont building type page](C:\Users\blahjays\Documents\GitHubCode\Personal_Public\TorontoWalks\docs\archidont_building_type_page.png)
+
+
+
+* The building information is stored in alternating blockquote and center (dates and journals)
+
+![](C:\Users\blahjays\Documents\GitHubCode\Personal_Public\TorontoWalks\docs\archidont_building_type_page_html.png)
+
+
+
+
+
+
+
+## Site 3: Toronto Plaques
+
+tbd
+
+## Site 4: Cabbagetown People
+
+tbd
+
+# Other Issues
+
+* after loading all entries into database, found 35 rows with invalid address to which GeoCoder couldn't assign a latitude / longitude
+* ![](C:\Users\blahjays\Documents\GitHubCode\Personal_Public\TorontoWalks\docs\RowsWithInvalidAddresses.png)
+
+* some addresses had a missing street number (i.e. 0 Yonge Street) while others were missing the city information (i.e. 7 Mossom Place)
+* 
