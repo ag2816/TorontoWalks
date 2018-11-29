@@ -52,3 +52,7 @@ tbd
 - Geocoder to get lats/longs of addresses
 - Trello - task Management
 - LucidChart - Flow Chart and Database ERD design
+
+## Project Notes
+* A blog entry on how I used SQLAlchemy ORM to set up the database can be found here: https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d
+* A more detailed overview of the websites scraped for this project, and what challenges I encountered, can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/Web%20Scraping%20Process%20and%20Challenges.md
