@@ -39,6 +39,7 @@ import pickle
 
 import flask
 from flask import  render_template, request, redirect
+from flask import Markup
 app = flask.Flask(__name__)
 
 def make_session():
@@ -861,28 +862,16 @@ def page():
    with open("C:/Users/blahjays/Documents/GitHubCode/Personal_Public/TorontoWalks/torontowalks/toronto_walks.html", 'r') as page:
        return page.read()
 
+def create_display_text(name, details):
+    name_html = f'<div id="content"> <div id="siteNotice"></div><h1 id="firstHeading" class="firstHeading">{name}</h1><div id="bodyContent">{details}</div></div>'
+    return  name_html
+
 @app.route('/result', methods=['POST', 'GET'])
 def result():
     '''Gets prediction using the HTML form'''
     if flask.request.method == 'POST':
 
         inputs = flask.request.form
-
-        # sugar = inputs['sugar']
-        # sulphates = inputs['sulphates']
-        # alcohol = inputs['alcohol']
-        # grape = inputs['grape']
-        #
-        # data = pd.DataFrame([{
-        #     'sugar': sugar,
-        #     'sulphates': sulphates,
-        #     'alcohol': alcohol,
-        #     'grape': grape}])
-        #
-        # pred = pipe.predict(data)[0]
-        # results = {'quality': round(pred, 1)}
-        # return flask.jsonify(results)
-
         user_profile = int(inputs['user_profile'])
         starting_lat = float(inputs['latitude'])
         starting_long= float(inputs['longitude'])
@@ -917,8 +906,14 @@ def result():
         stops_ordered2=json.dumps(stops_ordered)
 
         google_key = get_google_key( False   )
+
+        # stop_text = '<div id="content"><div id="siteNotice"></div><h1 id="firstHeading" class="firstHeading">Uluru</h1><div id="bodyContent"><p><b>Uluru</b>, also referred to as <b>Ayers Rock</b>, is a large sandstone rock formation in the southern part of the Northern Territory, central Australia. It lies 335&#160;km (208&#160;mi) south west of the nearest large town, Alice Springs; 450&#160;km (280&#160;mi) by road. Kata Tjuta and Uluru are the two major features of the Uluru - Kata Tjuta National Park. Uluru is sacred to the Pitjantjatjara and Yankunytjatjara, the Aboriginal people of the area. It has many springs, waterholes, rock caves and ancient paintings. Uluru is listed as a World Heritage Site.</p><p>Attribution: Uluru, <a href="https://en.wikipedia.org/w/index.php?title=Uluru&oldid=297882194">https://en.wikipedia.org/w/index.php?title=Uluru</a>(last visited June 22, 2009).</p></div></div>'
+
+        #stop_text = Markup('<strong>The HTML String</strong>')
+        stop_text=[ create_display_text(row['name'], row['details']) for ix, row in df_filtered.iterrows() ]
+        stop_text = Markup(stop_text)
         #results = {'route': guess, 'starting_lat': starting_lat, 'starting_long': starting_long}
-        return render_template('map_route.html', route=guess, starting_lat =starting_lat, starting_long =starting_long, ordered_stops = stops_ordered2, google_key = google_key)
+        return render_template('map_route.html', route=guess, starting_lat =starting_lat, starting_long =starting_long, ordered_stops = stops_ordered2, google_key = google_key, stop_text=stop_text)
         #return flask.jsonify(results)
 if __name__ == '__main__':
     '''Connects to the server'''

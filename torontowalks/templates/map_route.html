@@ -23,28 +23,45 @@
     <script>
 
 
-    function placeWalkStops(stops,map) {
+// TODO: look into callbacks for infowindow
+
+    function placeWalkStops(stops,map, stop_text) {
       console.log(stops)
         var walkRootCoordinates=[]; // array
+        // var infowindow = new google.maps.InfoWindow({
+        //     content: contentString
+        // });
+
         for (i=0; i<stops.length; i++) {
             console.log("placing stops")
             console.log(stops[i][0])
             console.log(stops[i][1])
+            // console.log({{stop_text | safe}})
 
             var stopLatLng = {lat:stops[i][0], lng:stops[i][1]};
             walkRootCoordinates.push(stopLatLng)
             if (i > 0){
-              // starting point is already plotted
-              stop = new google.maps.Marker({
-                position: stopLatLng,
-                map: map,
-                title: 'Stop ' + i,
-                label: '# ' + i
-              });
+              var contentString=stop_text[i-1];
+              console.log(contentString)
+              //  eval('var infowindow' + i-1 + ' = " new google.maps.InfoWindow({content: contentString});";');
+                var infowindow = new google.maps.InfoWindow({
+                    content: contentString
+                });
+                // starting point is already plotted
+                stop = new google.maps.Marker({
+                    position: stopLatLng,
+                    map: map,
+                    title: 'Stop ' + i,
+                    label: '# ' + i
+                });
+              stop.addListener('click', function() {
+                infowindow.open(map, stop);
+              //  eval('infowindow' + i-1 ).open(map, stop)
+             });
             }
         }
         // Add path
-        var flightPath = new google.maps.Polyline({
+        var walkPath = new google.maps.Polyline({
           path: walkRootCoordinates,
           geodesic: true,
           strokeColor: '#FF0000',
@@ -52,7 +69,7 @@
           strokeWeight: 2
         });
 
-        flightPath.setMap(map);
+        walkPath.setMap(map);
     }
 
       function initMap() {
@@ -69,8 +86,8 @@
           title: 'Starting Point',
           label: 'Start'
         });
-        console.log({{ordered_stops | safe}})
-        placeWalkStops({{ordered_stops | safe }},map);
+      //  console.log({{ordered_stops | safe}})
+        placeWalkStops({{ordered_stops | safe }},map,{{stop_text}});
 
       }
     </script>
