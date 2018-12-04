@@ -25,21 +25,34 @@
 
     function placeWalkStops(stops,map) {
       console.log(stops)
-
+        var walkRootCoordinates=[]; // array
         for (i=0; i<stops.length; i++) {
-          console.log("placing stops")
-          console.log(stops[i][0])
-          console.log(stops[i][1])
+            console.log("placing stops")
+            console.log(stops[i][0])
+            console.log(stops[i][1])
 
-          var stopLatLng = {lat:stops[i][0], lng:stops[i][1]};
-          stop = new google.maps.Marker({
-            position: stopLatLng,
-            map: map,
-            title: 'Stop ' + i,
-            label: '# ' + i
-          });
-
+            var stopLatLng = {lat:stops[i][0], lng:stops[i][1]};
+            walkRootCoordinates.push(stopLatLng)
+            if (i > 0){
+              // starting point is already plotted
+              stop = new google.maps.Marker({
+                position: stopLatLng,
+                map: map,
+                title: 'Stop ' + i,
+                label: '# ' + i
+              });
+            }
         }
+        // Add path
+        var flightPath = new google.maps.Polyline({
+          path: walkRootCoordinates,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+
+        flightPath.setMap(map);
     }
 
       function initMap() {

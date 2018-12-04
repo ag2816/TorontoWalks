@@ -911,10 +911,10 @@ def result():
         guess, df_filtered, walk_stops=find_optimal_route(df_filtered, starting_lat, starting_long, method='google')
         #map_stops
         stops_ordered = []
-        for stop in guess[1:]:
+        for stop in guess:
             stops_ordered.append(walk_stops[stop])
 
-        stops_ordered2=json.dumps(stops_ordered) # '[1, 2, [3, 4]]
+        stops_ordered2=json.dumps(stops_ordered)
 
         google_key = get_google_key( False   )
         #results = {'route': guess, 'starting_lat': starting_lat, 'starting_long': starting_long}
