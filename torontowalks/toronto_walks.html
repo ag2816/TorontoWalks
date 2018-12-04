@@ -2,6 +2,22 @@
 <html>
   <head>
     <title>TorontoWalks</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+
   </head>
   <body>
 
@@ -26,70 +42,47 @@
 
       <p><input type="submit" value="submit" /></p>
     </form>
+    <div id="map"></div>
+
+    <script>
+      var map;
+      // Adds a marker to the map.
+      function addMarker(location, map) {
+        // Add the marker at the clicked location, and add the next-available label
+        // from the array of alphabetical characters.
+      //  marker.setMap(null);
+
+        var marker = new google.maps.Marker({
+          position: location,
+          label: "test",
+          map: map
+        });
+        alert(marker.position)
+      }
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 43.647273, lng: -79.386560},
+          zoom: 14
+        });
+    // var myLatLng = {lat: {{starting_lat}}, lng:{{starting_long}}};
+        var marker = new google.maps.Marker({
+          position: {lat: 43.647273, lng: -79.386560},
+          map: map,
+          title: 'Starting Point',
+          label: 'Start',
+          draggable:true
+        });
+
+        // This event listener calls addMarker() when the map is clicked.
+        google.maps.event.addListener(map, 'click', function(event) {
+          addMarker(event.latLng, map);
+        });
 
 
-    <div id="map-canvas" style="height: 600px; width: 600px;"></div>
-
-        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBIZEcqgr0DiGW5PY-zYBoSpHSBTXdyb2U"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-
-        <script>
-          var positionToStarbucksLatlng = function(position) {
-            return position.coords.latitude + ',' + position.coords.longitude;
-          };
-          var positionToGoogleLatLng = function(position) {
-            return new google.maps.LatLng(
-              position.coords.latitude,
-              position.coords.longitude
-            );
-          };
-          var storeToGoogleLatLng = function(store) {
-            return new google.maps.LatLng(
-              store.store.coordinates.latitude,
-              store.store.coordinates.longitude
-            );
-          };
-          var drawStoresMap = function(position, storesData) {
-            var map = new google.maps.Map(document.getElementById('map-canvas'), {
-              center: positionToGoogleLatLng(position),
-              zoom: 12
-            });
-            for (var i = 0; i < storesData.stores.length; i++) {
-              drawMarker(map, storesData.stores[i]);
-            }
-          };
-          var drawMarker = function(map, store) {
-            var marker = new google.maps.Marker({
-              map: map,
-              position: storeToGoogleLatLng(store),
-              title: store.store.name
-            });
-          };
-          $(document).ready(function() {
-            navigator.geolocation.getCurrentPosition(function(position) {
-              console.log(position);
-            }, function(error) {
-              console.log(error);
-            });
-
-            // navigator.geolocation.getCurrentPosition(function(position) {
-            //   $.ajax({
-            //     url: 'https://testhost.openapi.starbucks.com/location/v2/stores/nearby',
-            //     headers: {
-            //       'Accept': 'application/json'
-            //     },
-            //     data: {
-            //       radius: 10,
-            //       latlng: positionToStarbucksLatlng(position)
-            //     },
-            //     success: function(storesData) {
-            //       drawStoresMap(position, storesData);
-            //     }
-            //   });
-            // });
-          });
-        </script>
-
-
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap"
+    async defer></script>
   </body>
 </html>
