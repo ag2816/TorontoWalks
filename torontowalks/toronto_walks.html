@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+  <head>
+    <title>TorontoWalks</title>
+  </head>
+  <body>
+
+    <form action="http://localhost:4000/result" method="POST">
+      <p>User Profile:
+        <select id="user_profile" name="user_profile">
+          <option value="1" selected="selected">Profile 1 (interested in People, especially entrapreneurs, science, medicine etc)</option>
+          <option value="2">Profile 2 (interested in early Toronto history and explorers)</option>
+          <option value="3">Profile 3 (enjoy public art)</option>
+        </select>
+      </p>
+      <p>Starting Latitude <input type="number" name="latitude" id="latitude" value="43.647273"/></p>
+      <p>Starting Longitude <input type="number" name="longitude" id="longitude" value ="-79.386560" /></p>
+      <p>Duration
+        <select id="duration" name="duration">
+          <option value="0.5" selected="selected">30 mins</option>
+          <option value="1">60 minutes</option>
+          <option value="1.5">90 Minutes</option>
+          <option value="2">120 minutes</option>
+        </select>
+      </p>
+
+      <p><input type="submit" value="submit" /></p>
+    </form>
+
+
+    <div id="map-canvas" style="height: 600px; width: 600px;"></div>
+
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBIZEcqgr0DiGW5PY-zYBoSpHSBTXdyb2U"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+        <script>
+          var positionToStarbucksLatlng = function(position) {
+            return position.coords.latitude + ',' + position.coords.longitude;
+          };
+          var positionToGoogleLatLng = function(position) {
+            return new google.maps.LatLng(
+              position.coords.latitude,
+              position.coords.longitude
+            );
+          };
+          var storeToGoogleLatLng = function(store) {
+            return new google.maps.LatLng(
+              store.store.coordinates.latitude,
+              store.store.coordinates.longitude
+            );
+          };
+          var drawStoresMap = function(position, storesData) {
+            var map = new google.maps.Map(document.getElementById('map-canvas'), {
+              center: positionToGoogleLatLng(position),
+              zoom: 12
+            });
+            for (var i = 0; i < storesData.stores.length; i++) {
+              drawMarker(map, storesData.stores[i]);
+            }
+          };
+          var drawMarker = function(map, store) {
+            var marker = new google.maps.Marker({
+              map: map,
+              position: storeToGoogleLatLng(store),
+              title: store.store.name
+            });
+          };
+          $(document).ready(function() {
+            navigator.geolocation.getCurrentPosition(function(position) {
+              console.log(position);
+            }, function(error) {
+              console.log(error);
+            });
+
+            // navigator.geolocation.getCurrentPosition(function(position) {
+            //   $.ajax({
+            //     url: 'https://testhost.openapi.starbucks.com/location/v2/stores/nearby',
+            //     headers: {
+            //       'Accept': 'application/json'
+            //     },
+            //     data: {
+            //       radius: 10,
+            //       latlng: positionToStarbucksLatlng(position)
+            //     },
+            //     success: function(storesData) {
+            //       drawStoresMap(position, storesData);
+            //     }
+            //   });
+            // });
+          });
+        </script>
+
+
+  </body>
+</html>
