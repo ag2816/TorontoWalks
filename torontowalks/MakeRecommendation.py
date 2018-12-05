@@ -686,30 +686,31 @@ def euclid_distance(x1, y1, x2, y2):
 
 def create_distance_matrix(locations):
     # Create the distance matrix.
-    gmaps = get_google_key()
+    #gmaps = get_google_key()
     size = len(locations)
     dist_matrix = {}
 
     # TEMP
     #pickle.load('dist_matrix.pkl'
-    dist_matrix = pickle.load(open("C:/Users/blahjays/Documents/GitHubCode/Personal_Public/TorontoWalks/torontowalks/dist_matrix.pkl","rb"))
+    #dist_matrix = pickle.load(open("C:/Users/blahjays/Documents/GitHubCode/Personal_Public/TorontoWalks/torontowalks/dist_matrix.pkl","rb"))
 
 
-    #
-    # for from_node in locations.keys():
-    #     dist_matrix[from_node] = {}
-    #     for to_node in locations.keys():
-    #         x1 = locations.get(from_node)[0]
-    #         y1 = locations.get(from_node)[1]
-    #         x2 = locations.get(to_node)[0]
-    #         y2 = locations.get(to_node)[1]
-    #         #print(x1,y1, x2, y2)
-    #        # dist_matrix[from_node][to_node] = euclid_distance(x1, y1, x2, y2)
-    #         #dist_matrix[from_node][to_node]  = gmaps.distance_matrix((x1,y1), (x2,y2), mode='walking')["rows"][0]["elements"][0]["distance"]["value"]
-    #         resp  = gmaps.distance_matrix((x1,y1), (x2,y2), mode='walking')
-    #         #print(f"response from google {resp}")
-    #         logging.debug(f"response from google {resp}")
-    #         dist_matrix[from_node][to_node] =resp["rows"][0]["elements"][0]["distance"]["value"]
+
+    for from_node in locations.keys():
+        dist_matrix[from_node] = {}
+        for to_node in locations.keys():
+            x1 = locations.get(from_node)[0]
+            y1 = locations.get(from_node)[1]
+            x2 = locations.get(to_node)[0]
+            y2 = locations.get(to_node)[1]
+            #print(x1,y1, x2, y2)
+           # dist_matrix[from_node][to_node] = euclid_distance(x1, y1, x2, y2)
+            #dist_matrix[from_node][to_node]  = gmaps.distance_matrix((x1,y1), (x2,y2), mode='walking')["rows"][0]["elements"][0]["distance"]["value"]
+            #resp  = gmaps.distance_matrix((x1,y1), (x2,y2), mode='walking')
+            #print(f"response from google {resp}")
+            #logging.debug(f"response from google {resp}")
+            #dist_matrix[from_node][to_node] =resp["rows"][0]["elements"][0]["distance"]["value"]
+            dist_matrix[from_node][to_node]  = geopy.distance.geodesic((x1,y1), (x2,y2)).meters
     return dist_matrix
 
 
