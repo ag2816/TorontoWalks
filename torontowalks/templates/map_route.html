@@ -28,9 +28,11 @@
     function placeWalkStops(stops,map, stop_text) {
       console.log(stops)
         var walkRootCoordinates=[]; // array
-        // var infowindow = new google.maps.InfoWindow({
-        //     content: contentString
-        // });
+
+        //you only need 1 infoWindow. this displays info on the stop
+         var infowindow = new google.maps.InfoWindow({
+           content: "holding" //content will be set later
+         });
 
         for (i=0; i<stops.length; i++) {
             console.log("placing stops")
@@ -43,10 +45,7 @@
             if (i > 0){
               var contentString=stop_text[i-1];
               console.log(contentString)
-              //  eval('var infowindow' + i-1 + ' = " new google.maps.InfoWindow({content: contentString});";');
-                var infowindow = new google.maps.InfoWindow({
-                    content: contentString
-                });
+
                 // starting point is already plotted
                 stop = new google.maps.Marker({
                     position: stopLatLng,
@@ -54,10 +53,15 @@
                     title: 'Stop ' + i,
                     label: '# ' + i
                 });
-              stop.addListener('click', function() {
-                infowindow.open(map, stop);
-              //  eval('infowindow' + i-1 ).open(map, stop)
-             });
+
+                // use closure to allow different text for different stops
+                google.maps.event.addListener(stop, 'click', function(content) {
+                    return function(){
+                        infowindow.setContent(content);//set the content
+                        infowindow.open(map,this);
+                    }
+                }(contentString));
+
             }
         }
         // Add path
@@ -70,6 +74,9 @@
         });
 
         walkPath.setMap(map);
+
+
+
     }
 
       function initMap() {
