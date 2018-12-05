@@ -863,9 +863,15 @@ def page():
    with open("C:/Users/blahjays/Documents/GitHubCode/Personal_Public/TorontoWalks/torontowalks/toronto_walks.html", 'r') as page:
        return page.read()
 
-def create_display_text(name, details):
-    name_html = f'<div id="content"> <div id="siteNotice"></div><h1 id="firstHeading" class="firstHeading">{name}</h1><div id="bodyContent">{details}</div></div>'
+def create_display_text(row):
+    name_html = f'<div id="content"> <div id="siteNotice"></div><h1 id="firstHeading" class="firstHeading">{row["name"]}</h1>'
+    name_html += f'<div id="bodyContent"><p>Build Year: {row["build_year"]}</p><p>Link for More Information: <a href="{row["external_url"]}" target="_blank">{row["external_url"]}</a></p>'
+    name_html += f'<img src={row["image_url"]} width="200" heigh="200"><p>{row["details"]}</p></div></div>'
     return  name_html
+
+# def create_display_text(name, details):
+#     name_html = f'<div id="content"> <div id="siteNotice"></div><h1 id="firstHeading" class="firstHeading">{name}</h1><div id="bodyContent">{details}</div></div>'
+#     return  name_html
 
 @app.route('/result', methods=['POST', 'GET'])
 def result():
@@ -909,9 +915,10 @@ def result():
         google_key = get_google_key( False   )
 
         # stop_text = '<div id="content"><div id="siteNotice"></div><h1 id="firstHeading" class="firstHeading">Uluru</h1><div id="bodyContent"><p><b>Uluru</b>, also referred to as <b>Ayers Rock</b>, is a large sandstone rock formation in the southern part of the Northern Territory, central Australia. It lies 335&#160;km (208&#160;mi) south west of the nearest large town, Alice Springs; 450&#160;km (280&#160;mi) by road. Kata Tjuta and Uluru are the two major features of the Uluru - Kata Tjuta National Park. Uluru is sacred to the Pitjantjatjara and Yankunytjatjara, the Aboriginal people of the area. It has many springs, waterholes, rock caves and ancient paintings. Uluru is listed as a World Heritage Site.</p><p>Attribution: Uluru, <a href="https://en.wikipedia.org/w/index.php?title=Uluru&oldid=297882194">https://en.wikipedia.org/w/index.php?title=Uluru</a>(last visited June 22, 2009).</p></div></div>'
-
+        df_filtered.sort_values("order", inplace=True, ascending=True)
         #stop_text = Markup('<strong>The HTML String</strong>')
-        stop_text=[ create_display_text(row['name'], row['details']) for ix, row in df_filtered.iterrows() ]
+        stop_text=[ create_display_text(row) for ix, row in df_filtered.iterrows() ]
+        # stop_text=[ create_display_text(row['name'], row['build_year'], row['details']) for ix, row in df_filtered.iterrows() ]
         stop_text = Markup(stop_text)
         #results = {'route': guess, 'starting_lat': starting_lat, 'starting_long': starting_long}
         return render_template('map_route.html', route=guess, starting_lat =starting_lat, starting_long =starting_long, ordered_stops = stops_ordered2, google_key = google_key, stop_text=stop_text)
