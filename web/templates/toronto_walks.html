@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+  <head>
+    <title>TorontoWalks</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+           integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+           crossorigin="anonymous"></script>
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+
+  </head>
+  <body>
+
+    <div class="heading">
+      <p>Welcome to TorontoWalks! </p>
+      <p>This application will generate a walk for you based on your selected interests, starting point and desired length of walk.  Please fill out the form below to get walking!</p>
+      <p>Please click anywhere on the map below to set the starting position.</p>
+    </div>
+<br />
+
+    <form action="{{url_for('result')}}" method="POST">
+      <p>User Profile:
+        <select id="user_profile" name="user_profile">
+          <option value="1" selected="selected">Profile 1 (interested in People, especially entrapreneurs, science, medicine etc)</option>
+          <option value="2">Profile 2 (interested in early Toronto history and explorers)</option>
+          <option value="3">Profile 3 (enjoy public art)</option>
+        </select>
+      </p>
+
+      <p>Starting Latitude <input name="latitude" id="latitude" value="43.647273"/></p>
+      <p>Starting Longitude <input  name="longitude" id="longitude" value ="-79.386560" /></p>
+      <p>Duration
+        <select id="duration" name="duration">
+          <option value="0.5" selected="selected">30 mins</option>
+          <option value="1">60 minutes</option>
+          <option value="1.5">90 Minutes</option>
+          <option value="2">120 minutes</option>
+        </select>
+      </p>
+
+      <p><input type="submit" value="Submit" /></p>
+    </form>
+
+
+    <div id="map"></div>
+    <script>
+      var map;
+       var markers = [];
+      // Adds a marker to the map.
+      function addMarker(location, map) {
+          // Add the marker at the clicked location, and add the next-available label
+          // from the array of alphabetical characters.
+          //  marker.setMap(null);
+          clearMarkers();
+          var marker = new google.maps.Marker({
+            position: location,
+            label: "Starting Point",
+            label: 'Start',
+            map: map
+          });
+          markers.push(marker)
+        //  alert(marker.position)
+      }
+
+      // Sets the map on all markers in the array.
+     function setMapOnAll(map) {
+       for (var i = 0; i < markers.length; i++) {
+         markers[i].setMap(map);
+       }
+     }
+
+     // Removes the markers from the map, but keeps them in the array.
+     function clearMarkers() {
+       setMapOnAll(null);
+     }
+
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 43.647273, lng: -79.386560},
+          zoom: 14
+        });
+    // var myLatLng = {lat: {{starting_lat}}, lng:{{starting_long}}};
+        var marker = new google.maps.Marker({
+          position: {lat: 43.647273, lng: -79.386560},
+          map: map,
+          title: 'Starting Point',
+          label: 'Start',
+          draggable:true
+        });
+        markers.push(marker)
+        // This event listener calls addMarker() when the map is clicked.
+        google.maps.event.addListener(map, 'click', function(event) {
+            addMarker(event.latLng, map);
+            $("#latitude").val(event.latLng.lat().toFixed(6));
+            $("#longitude").val(event.latLng.lng().toFixed(6));
+        });
+
+        // // adds a listener to the marker
+        //    // gets the coords when drag event ends
+        //    // then updates the input with the new coords
+        //    google.maps.event.addListener(vMarker, 'dragend', function (evt) {
+        //        $("#txtLat").val(evt.latLng.lat().toFixed(6));
+        //        $("#txtLng").val(evt.latLng.lng().toFixed(6));
+        //
+        //        map.panTo(evt.latLng);
+        //    });
+        //
+
+
+      }
+    </script>
+      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBIZEcqgr0DiGW5PY-zYBoSpHSBTXdyb2U&callback=initMap"
+    async defer></script>
+  </body>
+</html>
