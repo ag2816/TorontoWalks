@@ -1,57 +1,58 @@
-<!doctype html>
-<html>
-  <head>
-    <title>TorontoWalks</title>
-    <meta name="viewport" content="initial-scale=1.0">
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
-           integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-           crossorigin="anonymous"></script>
-    <meta charset="utf-8">
-    <style>
-      /* Always set the map height explicitly to define the size of the div
-       * element that contains the map. */
-      #map {
-        height: 100%;
-      }
-      /* Optional: Makes the sample page fill the window. */
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
+{% extends "layout.html" %}
 
-  </head>
-  <body>
+{% block content %}
 
-    <div class="heading">
-      <p>Welcome to TorontoWalks! </p>
-      <p>This application will generate a walk for you based on your selected interests, starting point and desired length of walk.  Please fill out the form below to get walking!</p>
-      <p>Please click anywhere on the map below to set the starting position.</p>
-    </div>
-<br />
+<h1>Welcome to TorontoWalks!</h1>
+<h3>This application will generate a walk for you based on your selected interests, starting point and desired length of walk.  Please fill out the form below to get walking!</h3>
+
+<!-- <div class="heading">
+    <p>Welcome to TorontoWalks! </p>
+    <p>This application will generate a walk for you based on your selected interests, starting point and desired length of walk.  Please fill out the form below to get walking!</p>
+    <p>Please click anywhere on the map below to set the starting position.</p>
+</div>
+<br /> -->
 
     <form action="{{url_for('result')}}" method="POST">
-      <p>User Profile:
+      <!-- <p>User Profile:
         <select id="user_profile" name="user_profile">
           <option value="1" selected="selected">Profile 1 (interested in People, especially entrapreneurs, science, medicine etc)</option>
           <option value="2">Profile 2 (interested in early Toronto history and explorers)</option>
           <option value="3">Profile 3 (enjoy public art)</option>
         </select>
-      </p>
+      </p> -->
+      <div class="form-group">
+          <label for="user_profile">User Profile:</label>
+            <select id="user_profile" name="user_profile">
+              <option value="1" selected="selected">Profile 1 (interested in People, especially entrapreneurs, science, medicine etc)</option>
+              <option value="2">Profile 2 (interested in early Toronto history and explorers)</option>
+              <option value="3">Profile 3 (enjoy public art)</option>
+            </select>
+          <small id="profileHelp" class="form-text text-muted">This will help our walk bot generate a custom walk just for you.</small>
+        </div>
+        <div class="form-group">
+            <label for="duration">Walk Duration:</label>
+            <select id="duration" name="duration">
+              <option value="0.5" selected="selected">30 mins</option>
+              <option value="1">60 minutes</option>
+              <option value="1.5">90 Minutes</option>
+              <option value="2">120 minutes</option>
+            </select>
+            <small id="durationHelp" class="form-text text-muted">Approximately how long would you like your walk to last?</small>
+          </div>
+
 
       <p>Starting Latitude <input name="latitude" id="latitude" value="43.647273"/></p>
       <p>Starting Longitude <input  name="longitude" id="longitude" value ="-79.386560" /></p>
-      <p>Duration
+      <!-- <p>Duration
         <select id="duration" name="duration">
           <option value="0.5" selected="selected">30 mins</option>
           <option value="1">60 minutes</option>
           <option value="1.5">90 Minutes</option>
           <option value="2">120 minutes</option>
         </select>
-      </p>
-
-      <p><input type="submit" value="Submit" /></p>
+      </p> -->
+<button type="submit" class="btn btn-success">Submit</button>
+      <!-- <p><input type="submit" value="Submit" /></p> -->
     </form>
 
 
@@ -123,7 +124,6 @@
 
       }
     </script>
-      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBIZEcqgr0DiGW5PY-zYBoSpHSBTXdyb2U&callback=initMap"
+      <script src="https://maps.googleapis.com/maps/api/js?key={{google_key}}&callback=initMap"
     async defer></script>
-  </body>
-</html>
+{% endblock %}
