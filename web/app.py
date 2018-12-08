@@ -55,41 +55,6 @@ for handler in logging.root.handlers[:]:
 logging.basicConfig(filename='../logs/makerecommendations.log',level=logging.DEBUG)
 
 
-def make_simple_poi(org_type):
-    if org_type == 'Plaque':
-        return org_type
-    elif org_type == 'Monument':
-        return 'Art'
-    else:
-        return 'Building'
-
-
-# In[6]:
-
-
-def add_features(df):
-    df['cleaned_year']=df['build_year'].apply(lambda x: clean_build_year(x))
-    df['cleaned_year']=pd.to_numeric(df['cleaned_year'],errors='coerce',downcast='integer')
-    df['build_decade']= df['cleaned_year'].apply(lambda x: x//10*10 )
-    df['poi_type_simple'] = df['poi_type'].apply(lambda x: make_simple_poi(x))
-    return df
-
-
-# In[7]:
-
-
-def clean_build_year(year):
-    if year == None or len(year) < 4:
-        return ''
-    strip_words = ['unknown', 'circa ', 'abt ', 'about']
-    for word in strip_words:
-        year=year.replace(word, '')
-    return year[0:4]
-
-
-# In[8]:
-
-
 def get_pois_as_df():
 
     db, session = make_session()
@@ -100,7 +65,7 @@ def get_pois_as_df():
     order by poi.poi_id
     '''
     df = pd.read_sql_query(sql, db)
-    df= add_features(df)
+    #df= add_features(df)
     return df
 
 
@@ -860,7 +825,8 @@ def hello():
 
 @app.route('/page')
 def page():
-    return render_template('toronto_walks.html')
+    google_key = get_google_key( False   )
+    return render_template('toronto_walks.html', google_key = google_key,)
    # with open("templates/toronto_walks.html", 'r') as page:
    #     return page.read()
 

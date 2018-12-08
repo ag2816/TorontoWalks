@@ -25,6 +25,7 @@ for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 logging.basicConfig(filename='../logs/initdataload.log',level=logging.INFO)
 
+
 df_to_db_map={
     'name':'name',
     'build_year':'build_year'   ,
@@ -92,7 +93,7 @@ def load_init_data():
     return df_poi, df_architects, df_cats, df_styles
 
 
-def data_clean_up(df_poi):
+def data_clean_up(df_poi, cols_check_dups = ['name', 'address','source','external_url']):
     '''
     Load from CSV
     Drop duplicates
@@ -102,7 +103,7 @@ def data_clean_up(df_poi):
     add new features
     '''
     #df_poi=load_init_data()
-    df_poi=df_poi.drop_duplicates(subset=['name', 'address','source','external_url'], keep='last')
+    df_poi=df_poi.drop_duplicates(subset=cols_check_dups, keep='last')
     df_poi['address']=df_poi.apply(lambda row: cleanup_address(row['name'], row['address'], logging), axis=1)
     for index, row in df_poi[pd.isna(df_poi['latitude']) | pd.isna(df_poi['longitude'])].iterrows():
         lat, long = get_lats_longs(row)
@@ -150,16 +151,16 @@ def save_to_database_ORM(session, df):
         session.add(poi)
         session.commit()
 
-if BaseConfig.POPULATE_DB:
-    logging.debug("Starting population of database")
-    df_poi, df_architects, df_cats, df_styles=load_init_data()
-    df_poi=data_clean_up(df_poi)
-    df_poi.head()
-    db=connect_db() #establish connection
-    Session = sessionmaker(bind=db)
-    session = Session()
-    save_to_database_ORM(session, df_poi[df_poi['poi_id']!=8])
-    print(session.query(PointsOfInterest).count())
-
-else:
-    print("The POPULATE_DB flag is false... exiting without action")
+# if BaseConfig.POPULATE_DB:
+#     logging.debug("Starting population of database")
+#     df_poi, df_architects, df_cats, df_styles=load_init_data()
+#     df_poi=data_clean_up(df_poi)
+#     df_poi.head()
+#     db=connect_db() #establish connection
+#     Session = sessionmaker(bind=db)
+#     session = Session()
+#     save_to_database_ORM(session, df_poi[df_poi['poi_id']!=8])
+#     print(session.query(PointsOfInterest).count())
+#
+# else:
+#     print("The POPULATE_DB flag is false... exiting without action")

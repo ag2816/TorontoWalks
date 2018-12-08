@@ -7,7 +7,10 @@ RUN groupadd flaskgroup && useradd -m -g flaskgroup -s /bin/bash flask
 # Create the working directory (and set it as the working directory)
 RUN mkdir -p /home/flask/app/web
 WORKDIR /home/flask/app/web
+# create folder where logs will be stored
 RUN mkdir -p /home/flask/app/logs
+# create folder for initial data to populate the db
+# RUN mkdir -p /home/flask/app/init_data
 
 # Install the package dependencies (this step is separated
 # from copying all the source code to avoid having to
