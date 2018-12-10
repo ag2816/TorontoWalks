@@ -18,9 +18,10 @@
     }
     /* Optional: Makes the sample page fill the window. */
     html, body {
+      padding-top: 35px;
       height: 100%;
       margin: 0;
-      padding: 0;
+
     }
   </style>
   </head>
@@ -30,8 +31,8 @@
     <!-- Static navbar -->
     <header>
       <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <img src="{{ url_for('static', filename='img/TorontoWalksLogo.png') }}" width="50" height="50"/>
         <a class="navbar-brand" href="#">TorontoWalks</a>
-        <img src="{{ url_for('static', filename='img/TorontoWalksLogo.png') }}" width="25" height="25"/>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -48,6 +49,7 @@
             </li>
           </ul>
         </div>
+
       </nav>
     </header>
 
@@ -55,12 +57,11 @@
         {% block content %}
         {% endblock %}
 
-      </div>
+
       <div class="footer">
         <hr>
         <p>Amy Gordon - 2018</p>
       </div>
-    </div><!-- /.container -->
 
     <!-- scripts -->
     <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>

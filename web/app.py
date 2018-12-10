@@ -7,16 +7,10 @@ import geocoder
 import os
 from dotenv import load_dotenv, find_dotenv
 import time
-import seaborn as sns
 import numpy as np
-import folium
-from folium.features import DivIcon
 import json
 DEBUG=0
 
-
-import matplotlib.pyplot as plt
-#get_ipython().magic(u'matplotlib inline')
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -35,7 +29,7 @@ import os
 #from sqlalchemy import create_engine
 from dotenv import load_dotenv, find_dotenv
 import math
-import pickle
+# import pickle
 
 import flask
 from flask import  render_template, request, redirect
@@ -55,6 +49,14 @@ for handler in logging.root.handlers[:]:
 logging.basicConfig(filename='../logs/makerecommendations.log',level=logging.DEBUG)
 
 
+def add_features(df):
+    df['build_century'] = df['build_year_clean'].apply(lambda x: x//100*100)
+#     df['cleaned_year']=df['build_year'].apply(lambda x: clean_build_year(x))
+#     df['cleaned_year']=pd.to_numeric(df['cleaned_year'],errors='coerce',downcast='integer')
+#     df['build_decade']= df['cleaned_year'].apply(lambda x: x//10*10 )
+#     df['poi_type_simple'] = df['poi_type'].apply(lambda x: make_simple_poi(x))
+    return df
+
 def get_pois_as_df():
 
     db, session = make_session()
@@ -65,7 +67,8 @@ def get_pois_as_df():
     order by poi.poi_id
     '''
     df = pd.read_sql_query(sql, db)
-    #df= add_features(df)
+    df= add_features(df)
+    session.close()
     return df
 
 
@@ -76,10 +79,11 @@ poi_mapper = DataFrameMapper([
    #('Date',None),
     # drop block and address
    # (['poi_id'], None),
-    ('build_decade',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
-     ('category',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
+    #('build_decade',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
+    ('build_century',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
+    # ('category',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
      #('architect_name',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
-     ('style',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
+    # ('style',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
      ('poi_type_simple',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
     # ('current_use',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
   #  (['latitude'],None),
@@ -87,177 +91,141 @@ poi_mapper = DataFrameMapper([
 ], df_out=True)
 
 
-# In[10]:
+# def get_user_profile(profile_num):
+#     '''
+#     # USER PROFILE 1 - interested in People (plaques), Entrepreneurs (32) Medicine (44), Science and Technology (52), Women (56), Sports(53) and modern buildings
+#     # USER PROFILE 2 -- interested in People (plaques 104) Explorers (33), Pioneers (46), Cemeteries (25), First Nations(35)
+# # and early buildings (0-9)
+#     # USER PROFILE 3 -- interested in Art ()
+#     '''
+#     user_prefs = np.zeros(7)
+#     if profile_num== 1:
+#         for i in [1,5]:
+#             user_prefs[i] = 1
+#     elif profile_num==2:
+#         for i in [2,6]:
+#             user_prefs[i] = 1
+#     else:
+#         for i in [4]:
+#             user_prefs[i] = 1
+#     df_user=pd.DataFrame(user_prefs).T
+#     return df_user
 
+def get_user_profile(df_cols, user_sel_prefs):
+    '''
+    df_cols: list with cols of "vectorized" dataframe
+    user_sel_prefs: list with selected cols that interest user
+    '''
 
-def get_user_profile(profile_num):
-    '''
-    # USER PROFILE 1 - interested in People (plaques), Entrepreneurs (32) Medicine (44), Science and Technology (52), Women (56), Sports(53) and modern buildings
-    # USER PROFILE 2 -- interested in People (plaques 104) Explorers (33), Pioneers (46), Cemeteries (25), First Nations(35)
-# and early buildings (0-9)
-    # USER PROFILE 3 -- interested in Art ()
-    '''
-    user_prefs = np.zeros(105)
-    if profile_num== 1:
-        for i in [32, 52, 44, 56,53, 67,70,75,77, 79, 80, 83, 89, 104]:
-            user_prefs[i] = 1
-    elif profile_num==2:
-        for i in [0,1,2,3,4,5,6,7,8,9,25, 33,35, 46,104]:
-            user_prefs[i] = 1
-    else:
-        for i in [102]:
-            user_prefs[i] = 1
-    df_user=pd.DataFrame(user_prefs).T#, columns=df_features.columns)
-#     df_user.columns = df_features.columns
-#     #df_user=pd.DataFrame.from_records(user_prefs,)
-#     df_user.head()
+    user_prefs = np.zeros(len(df_cols))
+
+    for pref in user_sel_prefs:
+        indx=df_cols.index(pref)
+        user_prefs[indx] = 1
+
+    df_user=pd.DataFrame(user_prefs).T
     return df_user
-
-
-# In[11]:
-
+# def get_user_profile(profile_num):
+#     '''
+#     # USER PROFILE 1 - interested in People (plaques), Entrepreneurs (32) Medicine (44), Science and Technology (52), Women (56), Sports(53) and modern buildings
+#     # USER PROFILE 2 -- interested in People (plaques 104) Explorers (33), Pioneers (46), Cemeteries (25), First Nations(35)
+# # and early buildings (0-9)
+#     # USER PROFILE 3 -- interested in Art ()
+#     '''
+#     user_prefs = np.zeros(105)
+#     if profile_num== 1:
+#         for i in [32, 52, 44, 56,53, 67,70,75,77, 79, 80, 83, 89, 104]:
+#             user_prefs[i] = 1
+#     elif profile_num==2:
+#         for i in [0,1,2,3,4,5,6,7,8,9,25, 33,35, 46,104]:
+#             user_prefs[i] = 1
+#     else:
+#         for i in [102]:
+#             user_prefs[i] = 1
+#     df_user=pd.DataFrame(user_prefs).T#, columns=df_features.columns)
+# #     df_user.columns = df_features.columns
+# #     #df_user=pd.DataFrame.from_records(user_prefs,)
+# #     df_user.head()
+#     return df_user
 
 
 def find_similarity(df_features, df_user,  df_poi, sim_method=cosine_similarity):
-
+    '''
+    INPUTS: "vectorized" dataframes of POIS and User
+    RETURNS: dataframe of Points of Interest sorted from highest to lowest similarity rating to the user prefs
+    '''
+    df_poi['sim_rating'] = 0
     if sim_method ==cosine_similarity:
         cosine_sim = cosine_similarity(df_features,df_user)
-        user_matches = pd.DataFrame(cosine_sim, columns=['user_match'])
-        user_matches.sort_values('user_match', ascending=False, inplace=True)
-        df_poi['sim_rating'] = 0
-        for ix,row in user_matches.iloc[0:20,:].iterrows():
-          #  print(ix, row)
+        user_matches = pd.DataFrame(cosine_sim, columns=['user_match']) # convert to df for ease
+        user_matches.sort_values('user_match', ascending=False, inplace=True) # sort from best to worst matches
+       # for ix,row in user_matches.iloc[0:20,:].iterrows():
+        for ix,row in user_matches.iterrows():
             # now find matches close to target of interest - ix is row in dataframe that matches to user match
             df_poi.loc[ix,'sim_rating'] = row.user_match
-        df_poi.sort_values('sim_rating', inplace=True, ascending=False)
-#     else:
-#         np_features = df_poi.as_matrix()
-#         site_prefs=[]
-#         for i in range(0,len(np_features)):
-#             np_features[i,:]
-#             result = spatial.distance.cosine(np_features[i,:], U)#, weight_of_importance)
-#             res_dict = {'ix': i, 'dist': result}
-#             site_prefs.append(res_dict)
-#         df_site_prefs = pd.DataFrame(site_prefs)
-#         df_site_prefs.sort_values('dist', inplace=True)
-#         df_site_prefs.head()
-#         #user_matches.iloc[0:20,:]
-#         for ix,row in df_site_prefs.iloc[0:20,:].iterrows():
-#             # now find matches close to target of interest
-#             print(df.iloc[ix,1])
+    else:
+        # spatial method requires numpy arrays
+        np_features = df_features.as_matrix()
+        U=df_user.as_matrix()
+       # weight_of_importance=[0.05,0.05,0.05,0.05,.27,.26,.27]
+        site_prefs=[]
+        for i in range(0,len(np_features)):
+            np_features[i,:]
+            result = spatial.distance.cosine(np_features[i,:], U)#, weight_of_importance)
+            res_dict = {'ix': i, 'dist': result}
+            site_prefs.append(res_dict)
+        # convert similarity rating for each POI to a df
+        df_site_prefs = pd.DataFrame(site_prefs)
+        df_site_prefs.sort_values('dist', ascending=False, inplace=True)
 
+        for ix,row in df_site_prefs.iterrows():
+            # now find matches close to target of interest
+            df_poi.loc[ix,'sim_rating'] = row.dist
 
+    df_poi.sort_values('sim_rating', inplace=True, ascending=False)
     return df_poi
 
-
-# In[12]:
-
-
 def find_points_in_area(df, lat, long, num_points, max_distance):
+    '''
+    Loop through POI dataframe that has already been sorted by similiarty to user prefs (from highest to lowest match)
+    find distance for each POI from starting point in meters
+    Check if is within the desired radius of the starting point to be a candidate stop
+    --> if yes, collect it in the avail_points list and increment the count of found stops
+    We have a few POIs with the exact same coordinates (sometimes due to duplicates, but also because some buildings may have multiple artworks)
+    --> this causes problems for google maps plotting of stops and also a fairly pointless walk with a bunch of stops in the same area
+    --> for now, only include the first POI at a given set of coordinates.  Use sets to make sure our coordinates are unique
+    due to some dirty data, have a few POIs with the same coordinates so skip repeats )
+    Once we have found the desired number of stops, exit
+
+    RETURNS: filtered dataframe of candidate stops with ~length of num_points
+
+    ## TODO: colllect all possible stops and then cluster?
+
+    '''
 
     avail_points = []
     found_points =0
     prev_coord = (0,0) # sometimes have two points at same lat/long -- don't count as an extra stop
-
+    prev_coords = set({})
     for ix, row in df.iterrows():
 
         curr_pt = geopy.distance.geodesic((row['latitude'], row['longitude']), (lat, long)).meters
-       # print(curr_pt)
 
         if curr_pt<= max_distance:
-           # print(row['latitude'], row['longitude'], curr_pt)
-            my_dict={}
-            my_dict =row.to_dict()
-            my_dict['dist_start'] = curr_pt
-            avail_points.append(my_dict)
-            if (row['latitude'], row['longitude']) !=prev_coord:
+            c=(row['latitude'], row['longitude'])
+            coord = set({c})
+            if prev_coords.issuperset(coord) == False:
+                # only include POIs whose coordinates are not already in our list of stops
+                prev_coords.add(c)
+                my_dict={}
+                my_dict =row.to_dict()
+                my_dict['dist_start'] = curr_pt
+                avail_points.append(my_dict)
                 found_points +=1
-            prev_coord = (row['latitude'], row['longitude'])
-            if found_points > num_points:
-                break
+                if found_points > num_points:
+                    break
     df_2 = pd.DataFrame(avail_points)
     return df_2
-
-
-# In[13]:
-
-
-#initialize map with a default lat and long
-import folium
-def plot_stops(starting_lat, starting_long, df):
-    map_clusters = folium.Map(location=[43.67146, -79.37515], zoom_start=11)
-    folium.CircleMarker(
-        [starting_lat, starting_long],
-        radius=5,
-        color='red',
-         fill=True,
-           fill_color='#3186cc',
-           fill_opacity=0.7).add_to(map_clusters)
-
-
-
-    # loop through dataframe
-    for lat, lng, name, address in zip(df['latitude'], df['longitude'],  df['name'],df['address']):
-       label = '{} {}'.format(name, address)
-       label = folium.Popup(label, parse_html=True)
-       folium.CircleMarker(
-           [lat, lng],
-           radius=5,
-           popup=label,
-           color='blue',
-           fill=True,
-           fill_color='#3186cc',
-           fill_opacity=0.7).add_to(map_clusters)
-
-    return map_clusters
-
-
-# ### Test from a point
-
-# In[14]:
-
-
-# # king/simco
-# starting_lat =43.647273
-# starting_long=-79.386560
-
-# walk_duration = 1 # in hours
-# num_points = 12
-# max_distance = 1000 # meters
-# num_pois_visit = 20
-
-
-# In[15]:
-
-
-# df_user = get_user_profile(3)
-# df_poi = get_pois_as_df()
-# df_features=df_poi.copy()
-# poi_mapper.fit(df_features)
-# df_features= poi_mapper.transform(df_features)
-# df_poi=find_similarity(df_features, df_user, df_poi)
-# df_filtered = find_points_in_area(df_poi, starting_lat, starting_long, num_points, max_distance)
-# #plot_stops(starting_lat, starting_long, df_filtered)
-
-
-# In[16]:
-
-
-# map_stops = plot_stops(starting_lat, starting_long, df_filtered)
-# map_stops
-
-
-# # GENETIC ALGORITHM TO PLOT POINTS
-# * borrowed and slightly adapted from https://github.com/ZWMiller/PythonProjects/blob/master/genetic_algorithms/evolutionary_algorithm_traveling_salesman.ipynb
-
-# In[17]:
-
-
-# TODO: cluster points
-
-
-# In[18]:
-
 
 def get_dict_of_stop_coords(df,starting_lat, starting_long, key_to_use='poi_id'):
     '''
@@ -276,11 +244,6 @@ def get_dict_of_stop_coords(df,starting_lat, starting_long, key_to_use='poi_id')
 
     return walk_stops
 
-
-# In[19]:
-
-
-
 def create_guess(walk_stops):
     """
     Creates a possible path between all cities, returning to the original.
@@ -297,13 +260,6 @@ def create_guess(walk_stops):
     #guess.append(guess[0])
     return list(guess)
 
-#print(create_guess(list(walk_stops.keys())))
-
-
-# In[20]:
-
-
-
 def create_generation(points, population=100):
     """
     Makes a list of guessed point orders given a list of point IDs.
@@ -313,13 +269,6 @@ def create_generation(points, population=100):
     """
     generation = [create_guess(points) for _ in range(population)]
     return generation
-
-# test_generation = create_generation(list(walk_stops.keys()), population=10)
-# for gen in test_generation:
-#     print(gen)
-
-
-# In[21]:
 
 
 def travel_time_between_points(point_1, point_2):
@@ -333,9 +282,6 @@ def travel_time_between_points(point_1, point_2):
     dist = geopy.distance.geodesic(point_1, point_2).meters
     # return guess speed in seconds
     return dist/speed
-
-
-# In[22]:
 
 
 def fitness_score(guess, walk_stops):
@@ -358,11 +304,6 @@ def check_fitness(guesses, walk_stops):
     for guess in guesses:
         fitness_indicator.append((guess, fitness_score(guess, walk_stops)))
     return fitness_indicator
-
-#print(check_fitness(test_generation))
-
-
-# In[23]:
 
 
 def get_breeders_from_generation(guesses, walk_stops, take_best_N=10, take_random_N=5, verbose=False, mutation_rate=0.1):
@@ -476,13 +417,6 @@ def evolve_to_solve(current_generation, max_generations, take_best_N, take_rando
 
     return fitness_tracking, best_guess
 
-#current_generation = create_generation(list(walk_stops.keys()),population=500)
-# for gen in current_generation:
-#     print(gen)
-
-
-# In[25]:
-
 
 def add_stop_order_to_df(df, order_guess, key_to_use='poi_id'):
     df['order'] =0
@@ -497,9 +431,6 @@ def add_stop_order_to_df(df, order_guess, key_to_use='poi_id'):
         df.iloc[index,-1]=cnt
         cnt +=1
     return df
-
-
-# In[26]:
 
 
 def plot_guess(city_coordinates, guess, guess_in_title=True):
@@ -522,93 +453,7 @@ def plot_guess(city_coordinates, guess, guess_in_title=True):
         print("Current Guess: [%s]"%(','.join([str(x) for x in guess])))
 
 
-
-# In[27]:
-
-
-def plot_cities(city_coordinates, annotate=True, guess=None):
-    """
-    Makes a plot of all cities.
-    Input: city_coordinates; dictionary of all cities and their coordinates in (x,y) format
-    """
-    names = []
-    x = []
-    y = []
-    plt.figure(dpi=250, figsize=(20,20))
-    for key in list(city_coordinates.keys()):
-        names.append(key)
-        x.append(city_coordinates[key][0])
-        y.append(city_coordinates[key][1])
-        if annotate:
-            if guess:
-                plt.annotate(guess.index(key), xy=(city_coordinates[key][0], city_coordinates[key][1]), xytext=(20, -20),
-                            textcoords='offset points', ha='right', va='bottom',
-                            bbox=dict(boxstyle='round,pad=0.5', fc='w', alpha=0.5),
-                            arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
-            else:
-                plt.annotate(ix, xy=(city_coordinates[key][0], city_coordinates[key][1]), xytext=(20, -20),
-                            textcoords='offset points', ha='right', va='bottom',
-                            bbox=dict(boxstyle='round,pad=0.5', fc='w', alpha=0.5),
-                            arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
-    plt.scatter(x,y,c='r',marker='o')
-
-
-# In[28]:
-
-
-def make_fitness_tracking_plot(fitness_tracking):
-    """
-    Given a list of fitness scores, plot it versus the generation number
-    """
-    plt.figure(dpi=150)
-    plt.plot(range(len(fitness_tracking)), fitness_tracking)
-    plt.ylabel("Fitness Score")
-    plt.xlabel("Generation")
-    plt.title("Fitness Evolution");
-
-#make_fitness_tracking_plot(fitness_tracking)
-
-
-# In[29]:
-
-
-def plot_stops_with_order(df, starting_lat, starting_long):
-    map_clusters = folium.Map(location=[43.67146, -79.37515], zoom_start=11)
-    folium.CircleMarker(
-        [starting_lat, starting_long],
-        radius=5,
-        color='red',
-         fill=True,
-           fill_color='#3186cc',
-           fill_opacity=0.7).add_to(map_clusters)
-
-
-
-    # loop through dataframe
-    for lat, lng, name, address,order in zip(df['latitude'], df['longitude'],  df['name'],df['address'], df['order']):
-        label = '{} {}'.format(name, address)
-        label = folium.Popup(label, parse_html=True)
-        folium.map.Marker(
-        [lat, lng],
-        icon=DivIcon(
-            icon_size=(150,36),
-            icon_anchor=(0,0),
-           # html='<b><div style="color:red,font-size: 10pt">{}</div></b>'.format(order),
-            html='<b><div style="color:red">{}</div></b>'.format(order),
-            )
-        ).add_to(map_clusters)
-
-    return map_clusters
-
-
-# In[30]:
-
-
-
 # # Try with Google OR Tools
-
-# In[31]:
-
 
 def get_google_key(get_map_obj= True):
     load_dotenv(find_dotenv())
@@ -621,9 +466,6 @@ def get_google_key(get_map_obj= True):
     return gmaps
 
 
-# In[32]:
-
-
 # Distance callback
 def create_distance_callback(dist_matrix):
     # Create a callback to calculate distances between cities.
@@ -634,8 +476,6 @@ def create_distance_callback(dist_matrix):
         return dist_matrix[from_node][to_node]
 
     return distance_callback
-
-
 
 
 def make_dist_matrix(num_rows):
@@ -655,11 +495,6 @@ def create_distance_matrix(locations):
     size = len(locations)
     dist_matrix = {}
 
-    # TEMP
-    #pickle.load('dist_matrix.pkl'
-    #dist_matrix = pickle.load(open("C:/Users/blahjays/Documents/GitHubCode/Personal_Public/TorontoWalks/torontowalks/dist_matrix.pkl","rb"))
-
-
 
     for from_node in locations.keys():
         dist_matrix[from_node] = {}
@@ -668,18 +503,8 @@ def create_distance_matrix(locations):
             y1 = locations.get(from_node)[1]
             x2 = locations.get(to_node)[0]
             y2 = locations.get(to_node)[1]
-            #print(x1,y1, x2, y2)
-           # dist_matrix[from_node][to_node] = euclid_distance(x1, y1, x2, y2)
-            #dist_matrix[from_node][to_node]  = gmaps.distance_matrix((x1,y1), (x2,y2), mode='walking')["rows"][0]["elements"][0]["distance"]["value"]
-            #resp  = gmaps.distance_matrix((x1,y1), (x2,y2), mode='walking')
-            #print(f"response from google {resp}")
-            #logging.debug(f"response from google {resp}")
-            #dist_matrix[from_node][to_node] =resp["rows"][0]["elements"][0]["distance"]["value"]
             dist_matrix[from_node][to_node]  = geopy.distance.geodesic((x1,y1), (x2,y2)).meters
     return dist_matrix
-
-
-# In[42]:
 
 
 #dist_matrix
@@ -703,7 +528,7 @@ def create_routing_model(walk_stops, dist_matrix ):
         assignment = routing.SolveWithParameters(search_parameters)
         if assignment:
             # Solution distance.
-            print ("Total distance: " + str(assignment.ObjectiveValue()) + " meters\n")
+            #print ("Total distance: " + str(assignment.ObjectiveValue()) + " meters\n")
             # Display the solution.
             # Only one route here; otherwise iterate from 0 to routing.vehicles() - 1
             route_number = 0
@@ -716,7 +541,7 @@ def create_routing_model(walk_stops, dist_matrix ):
                 route += str(walk_stops[routing.IndexToNode(index)]) + ' -> '
                 index = assignment.Value(routing.NextVar(index))
             route += str(walk_stops[routing.IndexToNode(index)])
-            print ("Route:\n\n" + route)
+            #print ("Route:\n\n" + route)
         else:
             print( 'No solution found.')
     else:
@@ -748,37 +573,6 @@ def find_optimal_route(df, starting_lat, starting_long, method='genetic'):
         #map_stops = plot_stops_with_order(df, starting_lat, starting_long)
     return order_guess, df, walk_stops
 
-
-# # Plot a route
-
-# In[37]:
-
-# def plan_route():
-#     # king/simco
-#     starting_lat =43.647273
-#     starting_long=-79.386560
-#
-#     walk_duration = 1 # in hours
-#     num_points = 12
-#     max_distance = 1000 # meters
-#     num_pois_visit = 20
-#
-#
-#     df_user = get_user_profile(3)
-#     df_poi = get_pois_as_df()
-#     df_features=df_poi.copy()
-#     poi_mapper.fit(df_features)
-#     df_features= poi_mapper.transform(df_features)
-#     df_poi=find_similarity(df_features, df_user, df_poi)
-#     df_filtered = find_points_in_area(df_poi, starting_lat, starting_long, num_points, max_distance)
-#     #plot_stops(starting_lat, starting_long, df_filtered)
-#
-#
-#     # map_stops=find_optimal_route(df_filtered, starting_lat, starting_long,method='genetic')
-#     # map_stops
-#
-#     map_stops=find_optimal_route(df_filtered, starting_lat, starting_long, method='google')
-#     map_stops
 
 #/generate_walk?user_profile=3&latitude=43.647273&longitude=-79.386560&duration=1
 
@@ -846,30 +640,36 @@ def result():
     if flask.request.method == 'POST':
 
         inputs = flask.request.form
-        user_profile = int(inputs['user_profile'])
+        #user_profile = int(inputs['user_profile'])
         starting_lat = float(inputs['latitude'])
         starting_long= float(inputs['longitude'])
         duration = float(inputs['duration'])
+        # checkboxes -- the list is the id of the checkboxes that are CHECKED
+        # unchecked boxes do not appear here
+        #i.e. ['poi_type_simple_Building', 'poi_type_simple_Plaque']
+        user_interests = request.form.getlist('user_interests')
+    #    pref_periods = request.form.getlist('pref_period')
+
+
 
         #TOOD: determine distance, num pos to visit based on duration
         pts_per_hour = 12
         max_dist_per_hour = 1000 # meters
         num_points = duration * pts_per_hour
         max_distance=duration * max_dist_per_hour
-        logging.debug(f"NEW CALL for profile {user_profile}, starting point {starting_lat},{starting_long} and duration {duration}")
+        logging.debug(f"NEW CALL for user with interests {user_interests}, starting point {starting_lat},{starting_long} and duration {duration}")
 
-        df_user = get_user_profile(3)
+        #df_user = get_user_profile(user_profile)
         df_poi = get_pois_as_df()
         df_features=df_poi.copy()
         poi_mapper.fit(df_features)
         df_features= poi_mapper.transform(df_features)
+
+        avail_interests = list(df_features.columns)
+        df_user = get_user_profile(avail_interests, user_interests)
+
         df_poi=find_similarity(df_features, df_user, df_poi)
         df_filtered = find_points_in_area(df_poi, starting_lat, starting_long, num_points, max_distance)
-        #plot_stops(starting_lat, starting_long, df_filtered)
-
-
-        # map_stops=find_optimal_route(df_filtered, starting_lat, starting_long,method='genetic')
-        # map_stops
 
         guess, df_filtered, walk_stops=find_optimal_route(df_filtered, starting_lat, starting_long, method='google')
         #map_stops
@@ -880,16 +680,12 @@ def result():
         stops_ordered2=json.dumps(stops_ordered)
 
         google_key = get_google_key( False   )
-
-        # stop_text = '<div id="content"><div id="siteNotice"></div><h1 id="firstHeading" class="firstHeading">Uluru</h1><div id="bodyContent"><p><b>Uluru</b>, also referred to as <b>Ayers Rock</b>, is a large sandstone rock formation in the southern part of the Northern Territory, central Australia. It lies 335&#160;km (208&#160;mi) south west of the nearest large town, Alice Springs; 450&#160;km (280&#160;mi) by road. Kata Tjuta and Uluru are the two major features of the Uluru - Kata Tjuta National Park. Uluru is sacred to the Pitjantjatjara and Yankunytjatjara, the Aboriginal people of the area. It has many springs, waterholes, rock caves and ancient paintings. Uluru is listed as a World Heritage Site.</p><p>Attribution: Uluru, <a href="https://en.wikipedia.org/w/index.php?title=Uluru&oldid=297882194">https://en.wikipedia.org/w/index.php?title=Uluru</a>(last visited June 22, 2009).</p></div></div>'
         df_filtered.sort_values("order", inplace=True, ascending=True)
-        #stop_text = Markup('<strong>The HTML String</strong>')
         stop_text=[ create_display_text(row) for ix, row in df_filtered.iterrows() ]
-        # stop_text=[ create_display_text(row['name'], row['build_year'], row['details']) for ix, row in df_filtered.iterrows() ]
         stop_text = Markup(stop_text)
-        #results = {'route': guess, 'starting_lat': starting_lat, 'starting_long': starting_long}
         return render_template('map_route.html', route=guess, starting_lat =starting_lat, starting_long =starting_long, ordered_stops = stops_ordered2, google_key = google_key, stop_text=stop_text)
-        #return flask.jsonify(results)
+
+
 if __name__ == '__main__':
     '''Connects to the server'''
     app.run()
