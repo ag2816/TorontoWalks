@@ -1,4 +1,16 @@
 {% extends "layout.html" %}
+<style>
+  .labels{
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    opacity: 1;
+    pointer-events: none;
+    text-align: center;
+    width: 60px;
+    white-space: nowrap;
+}
+</style>
 
 {% block content %}
   <!-- <body>
@@ -9,7 +21,7 @@
 
 // TODO: look into callbacks for infowindow
 
-    function placeWalkStops(stops,map, stop_text) {
+    function placeWalkStops(stops,map, stop_text, stop_icons) {
       console.log(stops)
         var walkRootCoordinates=[]; // array
 
@@ -35,7 +47,11 @@
                     position: stopLatLng,
                     map: map,
                     title: 'Stop ' + i,
-                    label: '# ' + i
+
+                    icon: {
+                      url: stop_icons[i-1]
+                    },
+                    label:  '# ' + i
                 });
 
                 // use closure to allow different text for different stops
@@ -78,7 +94,7 @@
           label: 'Start'
         });
       //  console.log({{ordered_stops | safe}})
-        placeWalkStops({{ordered_stops | safe }},map,{{stop_text}});
+        placeWalkStops({{ordered_stops | safe }},map,{{stop_text}},{{stop_icons}});
 
       }
     </script>

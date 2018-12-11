@@ -3,18 +3,18 @@
 {% block content %}
 
 <h1>Welcome to TorontoWalks!</h1>
-<h5>This application will generate a walk for you based on your selected interests, starting point and desired length of walk.  Please fill out the form below to get walking!</h5>
+<h5>Ready to explore Toronto?  Let us generate a custom walking route for you!</h5>
 
     <form action="{{url_for('result')}}" method="POST">
       <h6>Tell us about the types of stops you'd like to discover:</h6>
-      <small id="profileHelp" class="form-text text-muted">This will help our walk bot generate a custom walk just for you.</small>
+      <!-- <small id="profileHelp" class="form-text text-muted">This will help our walk bot generate a custom walk just for you.</small> -->
 
       <div class="form-group">
-        <!-- <label for="user_profile">Tell us about the types of stops you'd like to discover:</label> -->
+        <label for="user_profile">Stop Type:</label> -->
         <!-- <br/> -->
         <div class="form-check form-check-inline">
           <input class="form-check-input" type="checkbox" name="user_interests" id="checkboxBuilding" value="poi_type_simple_Building">
-          <label class="form-check-label" for="inlineCheckbox1">Buildings</label>
+          <label class="form-check-label" for="inlineCheckbox1">Buildings/Architecture</label>
         </div>
         <div class="form-check form-check-inline">
           <input class="form-check-input" type="checkbox" name="user_interests" id="checkboxPlaque" value="poi_type_simple_Plaque">
@@ -25,9 +25,9 @@
           <label class="form-check-label" for="inlineCheckbox3">Public Art</label>
         </div>
       </div>
-      <h6>I'm interested in history from the:</h6>
+      <!-- <h6>I'm interested in history from the:</h6> -->
       <div class="form-group">
-        <!-- <label for="user_profile">Time Periods:</label> -->
+        <label for="user_profile">Historical period:</label>
         <div class="form-check form-check-inline">
           <input class="form-check-input" type="checkbox" name="user_interests" id="checkbox1700" value="build_century_1700.0">
           <label class="form-check-label" for="checkbox1700">1700s</label>
@@ -56,15 +56,20 @@
               <option value="1.5">90 Minutes</option>
               <option value="2">120 minutes</option>
             </select>
-            <small id="durationHelp" class="form-text text-muted">Approximately how long would you like your walk to last?</small>
+            <!-- <small id="durationHelp" class="form-text text-muted">Approximately how long would you like your walk to last?</small> -->
           </div>
+          <div class="form-group">
+              <label for="duration">Interests (i.e. a topic, architectural style):</label>
+              <input type="text" id="pref" name="pref"/>
+              <!-- <small id="durationHelp" class="form-text text-muted">Approximately how long would you like your walk to last?</small> -->
+            </div>
           <div class="form-group">
               <label for="duration">Click anywhere on the map below to set your starting point</label>
               <input hidden name="latitude" id="latitude" value="43.647273"/>
               <input  hidden name="longitude" id="longitude" value ="-79.386560" />
             </div>
 
-<button type="submit" class="btn btn-success">Submit</button>
+            <button type="submit" class="btn btn-success">Create my walk!</button>
       <!-- <p><input type="submit" value="Submit" /></p> -->
     </form>
 
