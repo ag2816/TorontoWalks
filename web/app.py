@@ -9,7 +9,7 @@ import os
 import time
 import numpy as np
 import json
-
+import pickle
 #from genetic_algorithm import *
 from optimization import *
 from find_stops import *
@@ -21,12 +21,13 @@ import geocoder
 
 DEBUG=0
 
-from sklearn.base import TransformerMixin, BaseEstimator
+#from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.impute import SimpleImputer
 from sklearn_pandas import DataFrameMapper, CategoricalImputer
 from sklearn.preprocessing import (
-    StandardScaler, LabelBinarizer, Imputer, FunctionTransformer,PolynomialFeatures, OrdinalEncoder
+    StandardScaler, LabelBinarizer
 )
 
 
@@ -47,10 +48,31 @@ for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 logging.basicConfig(filename='../logs/makerecommendations.log',level=logging.DEBUG)
 
+def get_descriptors_for_poi(row):
+    '''
+    INPUT: accepts 1 row of a dataframe /series
+    RETURNS: string
+    '''
+    descriptor = ""
+    keys = ['style', 'category']
+    for key in keys:
+        if row[key]!=None:
+            descriptor += row[key]
+    return descriptor
 
 def add_features(df):
     df['build_century'] = df['build_year_clean'].apply(lambda x: x//100*100)
+    df['descriptors'] = df.apply(lambda row:get_descriptors_for_poi(row), axis=1 )
     return df
+
+def transform_pipeline_for_column(my_col, pipe):
+    '''
+    apply pipeline to selected column in the dataframe
+    '''
+    returned_words = pipe.transform(my_col)
+    tmp_df = pd.DataFrame(returned_words.toarray(), columns=pipe.named_steps['cv'].get_feature_names())
+    ## add a prefix
+    return tmp_df.add_prefix('pref_')
 
 def get_pois_as_df():
 
@@ -66,17 +88,30 @@ def get_pois_as_df():
     session.close()
     return df
 
+# # converts POI dataframe to vector for similarity comparisons
+# poi_mapper = DataFrameMapper([
+#     ('build_century',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
+#     ('poi_type_simple',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
+#     ('descriptors',[CategoricalImputer(replacement="n/a")]),
+# ], df_out=True)
+#
+# # pipeline used for converting descriptors to word vector
+# pipe = Pipeline([
+#     ('cv', CountVectorizer(ngram_range=(1,1),
+#             lowercase=True,
+#             max_features=5000,
+#             strip_accents='unicode'))
+# ])
 
-poi_mapper = DataFrameMapper([
-    ('build_century',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
-     ('poi_type_simple',[CategoricalImputer(replacement="n/a"), LabelBinarizer()]),
-], df_out=True)
-
-
-def get_user_profile(df_cols, user_sel_prefs):
+def get_user_profile(df_cols, user_sel_prefs, prefs, pipe):
     '''
+    INPUTS
     df_cols: list with cols of "vectorized" dataframe
-    user_sel_prefs: list with selected cols that interest user
+    user_sel_prefs: list with selected cols that interest user (poi types and eras)
+    prefs: string with keywords describing user's iterests
+    pipeline: for vectorizing prefs
+    OUTPUTS
+    vector with 0/1 for presence /absense of each feature in user prefs
     '''
 
     user_prefs = np.zeros(len(df_cols))
@@ -86,7 +121,15 @@ def get_user_profile(df_cols, user_sel_prefs):
         user_prefs[indx] = 1
 
     df_user=pd.DataFrame(user_prefs).T
+    #columns are numerically named-- change to match original df
+    col_size=list(range(len(df_cols)))
+    df_user.rename(columns = dict(zip(col_size, df_cols )), inplace=True)
+
+    d2=transform_pipeline_for_column(pd.Series(prefs), pipe)
+
+    df_user=pd.concat([df_user,d2], axis=1)
     return df_user
+
 
 def create_walking_route(starting_lat, starting_long, duration, prefs, user_interests):
     #determine distance, num pos to visit based on duration
@@ -97,13 +140,32 @@ def create_walking_route(starting_lat, starting_long, duration, prefs, user_inte
     logging.debug(f"NEW CALL for user with interests {user_interests}, starting point {starting_lat},{starting_long} and duration {duration}")
 
     #set up our data
-    df_poi = get_pois_as_df()
-    df_features=df_poi.copy()
-    poi_mapper.fit(df_features)
-    df_features= poi_mapper.transform(df_features)
+    pipe = pickle.load(open("pipe.pkl","rb"))
+    df_features = pickle.load(open("df_features.pkl","rb"))
+    df_poi = pickle.load(open("df_poi.pkl","rb"))
+    avail_interests= pickle.load(open("avail_interests.pkl","rb"))
 
-    avail_interests = list(df_features.columns)
-    df_user = get_user_profile(avail_interests, user_interests)
+
+    # df_poi = get_pois_as_df()
+    # df_features=df_poi.copy()
+    # poi_mapper.fit(df_features)
+    # df_features= poi_mapper.transform(df_features)
+
+    #avail_interests = list(df_features.columns)
+    #avail_interests.remove('descriptors')
+
+    # # vectorize descriptors
+    # pipe_desc = pipe.fit(df_features['descriptors'])
+    # df_trans = transform_pipeline_for_column(df_features['descriptors'], pipe_desc)
+    # df_features.drop(columns='descriptors', inplace=True)
+    # df_features = pd.concat([ df_trans, df_features], axis=1)
+    # # order to match user prefs!
+    # df_features=df_features.reindex_axis(sorted(df_features.columns), axis=1)
+
+
+    df_user = get_user_profile(avail_interests, user_interests, prefs, pipe)
+
+    #df_user = get_user_profile(avail_interests, user_interests)
 
     df_poi=find_similarity(df_features, df_user, df_poi)
     df_filtered = find_points_in_area(df_poi, starting_lat, starting_long, num_points, max_distance)
