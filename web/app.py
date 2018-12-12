@@ -88,6 +88,39 @@ def get_user_profile(df_cols, user_sel_prefs):
     df_user=pd.DataFrame(user_prefs).T
     return df_user
 
+def create_walking_route(starting_lat, starting_long, duration, prefs, user_interests):
+    #determine distance, num pos to visit based on duration
+    pts_per_hour = 12
+    max_dist_per_hour = 1000 # meters
+    num_points = duration * pts_per_hour
+    max_distance=duration * max_dist_per_hour
+    logging.debug(f"NEW CALL for user with interests {user_interests}, starting point {starting_lat},{starting_long} and duration {duration}")
+
+    #set up our data
+    df_poi = get_pois_as_df()
+    df_features=df_poi.copy()
+    poi_mapper.fit(df_features)
+    df_features= poi_mapper.transform(df_features)
+
+    avail_interests = list(df_features.columns)
+    df_user = get_user_profile(avail_interests, user_interests)
+
+    df_poi=find_similarity(df_features, df_user, df_poi)
+    df_filtered = find_points_in_area(df_poi, starting_lat, starting_long, num_points, max_distance)
+     # add clustering
+    df_filtered = cluster_stops(df_filtered, num_points)
+    df_filtered=df_filtered.reset_index()
+
+    # find optimal route
+    guess, df_filtered, walk_stops=find_optimal_route(df_filtered, starting_lat, starting_long, method='google')
+    df_filtered.sort_values("order", inplace=True, ascending=True)
+
+    stops_ordered = []
+    for stop in guess:
+        stops_ordered.append(walk_stops[stop])
+    stops_ordered2=json.dumps(stops_ordered)
+
+    return  df_filtered, stops_ordered2, guess
 
 @app.route("/")
 def hello():
@@ -119,6 +152,7 @@ def create_display_text(row):
 
     return  detail_html
 
+
 @app.route('/result', methods=['POST', 'GET'])
 def result():
     '''Gets prediction using the HTML form'''
@@ -133,52 +167,23 @@ def result():
         # checkboxes -- the list is the id of the checkboxes that are CHECKED
         # unchecked boxes do not appear here
         user_interests = request.form.getlist('user_interests')
-        #user_interests = request.form.getlist('pref')
 
-        #determine distance, num pos to visit based on duration
-        pts_per_hour = 12
-        max_dist_per_hour = 1000 # meters
-        num_points = duration * pts_per_hour
-        max_distance=duration * max_dist_per_hour
-        logging.debug(f"NEW CALL for user with interests {user_interests}, starting point {starting_lat},{starting_long} and duration {duration}")
+        # invoke the logic
+        df_filtered, stops_ordered2, guess=create_walking_route(starting_lat, starting_long, duration, prefs, user_interests)
 
-        #set up our data
-        df_poi = get_pois_as_df()
-        df_features=df_poi.copy()
-        poi_mapper.fit(df_features)
-        df_features= poi_mapper.transform(df_features)
-
-        avail_interests = list(df_features.columns)
-        df_user = get_user_profile(avail_interests, user_interests)
-
-        df_poi=find_similarity(df_features, df_user, df_poi)
-        df_filtered = find_points_in_area(df_poi, starting_lat, starting_long, num_points, max_distance)
-         # add clustering
-        df_filtered = cluster_stops(df_filtered, num_points)
-        df_filtered=df_filtered.reset_index()
-
-        # find optimal route
-        guess, df_filtered, walk_stops=find_optimal_route(df_filtered, starting_lat, starting_long, method='google')
-        #map_stops
-        stops_ordered = []
-        for stop in guess:
-            stops_ordered.append(walk_stops[stop])
-
-        stops_ordered2=json.dumps(stops_ordered)
-
+        # prep for display
         google_key = get_google_key( False   )
-        df_filtered.sort_values("order", inplace=True, ascending=True)
 
         # html for details box for each poi
         stop_text=[ create_display_text(row) for ix, row in df_filtered.iterrows() ]
         stop_text = Markup(stop_text)
 
+        # defined the coloured icons used to identify the different stop types
         color_dict = {'Art': 'http://maps.google.com/mapfiles/ms/micons/blue.png', 'Building': 'http://maps.google.com/mapfiles/ms/micons/lightblue.png', 'Plaque': 'http://maps.google.com/mapfiles/ms/micons/pink.png'}
-
         #color_dict = {'Art': 'http://maps.google.com/mapfiles/kml/paddle/blu-blank.png', 'Building': 'http://maps.google.com/mapfiles/kml/paddle/grn-blank.png', 'Plaque': 'http://maps.google.com/mapfiles/kml/paddle/pink-blank.png'}
-
         icons=[ color_dict[row] for row in df_filtered['poi_type_simple'].values ]
         icons = Markup(icons)
+
         return render_template('map_route.html', route=guess, starting_lat =starting_lat, starting_long =starting_long, ordered_stops = stops_ordered2, google_key = google_key, stop_text=stop_text, stop_icons=icons)
 
 
