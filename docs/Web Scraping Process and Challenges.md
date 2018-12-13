@@ -34,7 +34,7 @@ I ran into a couple **challenges**
 
 example url: http://www.acotoronto.ca/show_building.php?BuildingID=3883
 
-![Example Building Page](https://github.com/ag2816/TorontoWalks/blob/master/docs/imagesaco_toronto_building_page.png)
+![Example Building Page](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/aco_toronto_building_page.png)
 
 **Challenge**: The labels Name & Location, Status, Year Completed etc are stored in divs with class building_info, while the values immediately follow those labels in a div with class building_info2.  Unfortunately the value divs have no identifying information of their own
 
