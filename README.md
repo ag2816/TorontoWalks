@@ -26,7 +26,10 @@ One of my favourite pass times is to wander through a new neighbourhood or area 
 
 - TorontoWalks will gather points of interest from various open source listings of Toronto historical buildings, historical plaques, public art etc and store those in a database.  
 - Will use GeoCoder api to apply lat/long coordinates to all POI (Points of Interest)
-- A blog entry on how I used SQLAlchemy ORM to set up the database can be found here: https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d
+- Project-related blog entries:
+  - how I used SQLAlchemy ORM to set up the database can be found here: https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d
+  - How to match up lat/long with specific neighbourhoods defined in a shape file: https://medium.com/dataexplorations/working-with-open-data-shape-files-using-geopandas-how-to-match-up-your-data-with-the-areas-9377471e49f2
+  - How to create choropleth maps in Altair: https://medium.com/dataexplorations/creating-choropleth-maps-in-altair-eeb7085779a1
 
 
 
@@ -106,10 +109,17 @@ tbd
 #### Stage 3: Measure Similarity
 
 * need to measure similarity between user's stated preferences and each available POI to try to find the closest matches
+* This is similar to a Content-based Recommendation Engine problem except that there is no information available on users preferences and whether they liked / didn't like a particular POI.  This is a "cold start" situation
+* Most recommendation engine libraries were, therefore, not appropriate
+* So decided to use a simple Cosine-Similarity method to measure similarity between a vector of the user's stated walk preferences and a matrix of information stored about each POI
+* **TODO**: add visual of cosine-similarity
+* More information on this function can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/ComputeSimilarity.md
 
 #### Stage 4: Find best stops within range of Starting Coordinates
 
-* 
+* Now we need to trim this list back to reality and find the best matched stops within a reasonable distance of the walk starting point.
+* Assumed user could generally comfortably visit 12 POIs in an hour within a radius of 1 KM (1000 meters) from the starting point
+* More information on this function can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
 
 #### Stage 5: Find Optimal Route
 
