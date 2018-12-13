@@ -102,8 +102,8 @@ This site contains information on public art located around Toronto.
 # Other Issues
 
 * after loading all entries into database, found 35 rows with invalid address to which GeoCoder couldn't assign a latitude / longitude
-* ![rows with invalid addresses](https://github.com/ag2816/TorontoWalks/blob/master/docs/RowsWithInvalidAddresses.png)
+* ![rows with invalid addresses](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/RowsWithInvalidAddresses.png)
 * some addresses had a missing street number (i.e. 0 Yonge Street) while others were missing the city information (i.e. 7 Mossom Place)
-* ![rows with invalid addresses](https://github.com/ag2816/TorontoWalks/blob/master/docs/RowsWithInvalidAddresses.png)
+* ![rows with invalid addresses](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/RowsWithInvalidAddresses.png)
 * Also found that some lat/long were in New York State or St Catherine's (ACOToronto website addresses just contain Toronto borough without province, so a lot of "York" addresses ended up in New York state).  Wrote address clean up function
 
