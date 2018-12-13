@@ -13,19 +13,26 @@ One of my favourite pass times is to wander through a new neighbourhood or area 
 
 ## Executive Summary
 
-1. An executive summary:
+TorontoWalks is a walk generator that generates suggested walking routes based on user interests, starting point and desired walk duration.  The database of Toronto Points of Interest (POIs) was collected by web-scraping several websites (ACOToronto, TorontoPlaques, Archidont) and by using city of Toronto Open Data (public art works).  The success of the generated walks is measured primarily by walk distance (is it achievable in time allotted?) and measure of similarity to user preferences.
 
-- What is your goal?
-- Where did you get your data?
-- What are your metrics?
-- What were your findings?
-- What risks/limitations/assumptions affect these findings?
-- What risks/limitations/assumptions affect these findings?
+The main challenges in developing this tool were:
 
-## Overview
+1) gathering data
 
-- TorontoWalks will gather points of interest from various open source listings of Toronto historical buildings, historical plaques, public art etc and store those in a database.  
-- Will use GeoCoder api to apply lat/long coordinates to all POI (Points of Interest)
+2) Preparing the data and user preferences
+
+3) Measure similarity between POIs and user interests
+
+4) find "best matched" stops within reasonable distance of starting point
+
+5) Plot optimal route between stops (Travelling Salesman Problem)
+
+The success of the generated walks is measured primarily by walk distance (is it achievable in time allotted?) and measure of similarity to user preferences.  By this measure, adding a step to cluster the stops helped improve the quality of generated walks.  Google OR Tools was a fast and efficient tool used to plot the optimal route
+
+The resulting tool was packaged in a flask application with a google maps interface for picking the starting point and plotting the generated route
+
+## Notes
+
 - Project-related blog entries:
   - how I used SQLAlchemy ORM to set up the database can be found here: https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d
   - How to match up lat/long with specific neighbourhoods defined in a shape file: https://medium.com/dataexplorations/working-with-open-data-shape-files-using-geopandas-how-to-match-up-your-data-with-the-areas-9377471e49f2
@@ -33,7 +40,7 @@ One of my favourite pass times is to wander through a new neighbourhood or area 
 
 
 
-### Proposed Flow of Application
+### Flow of Application
 
 ![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_Flow.png)
 
@@ -53,10 +60,6 @@ One of my favourite pass times is to wander through a new neighbourhood or area 
 - Database: PostgreSQL hosted on Docker on Digital Ocean
 - Use SQLAlchemy ORM to interact with database
 
-## Metric of Success
-
-tbd
-
 ## Technologies Used
 
 - Python
@@ -66,14 +69,14 @@ tbd
 - Beautiful Soup - Web Scraping
 - Selenium - web scraping of scroll-to-load-more web pages
 - Postgres database
-- Docker for hosting postgres
-- Flask (coming...)
+- Docker for hosting database and flask web app
 - Geocoder to get lats/longs of addresses
-- Trello - task Management
-- LucidChart - Flow Chart and Database ERD design
-- Google Maps Api
 - SKLearn pipelines
+- DataFrameMapper
 - HDBSCANclustering
+- Flask 
+- Google Maps Api
+- 
 
 ## Project Notes
 ### Preparation Stage: Gathering Data
@@ -197,7 +200,9 @@ This method returns the original, full POI dataframe sorted based on the user's 
 
 * But found that the generated walks were often unreasonably long and so decided to add an extra step to cluster the found "best" stops in a more concentrated geographic cluster.
 
-  * used HDBSCAN which can use geographic (haversine) distance rather than simple Euclidean disance ("flat earth").  Tuned it so it produces 1 output cluster with the desired number of stops (all other stops are labelled as outliers)
+  * HDBSCAN is a density-based clustering algorithm, which means that it tries to find areas of the dataset that have a higher density of points than the rest of the dataset.  It is generally more interpretable than K-Means and has fewer hyperparameters to tune
+  * It supports a variety of distance metrics, including Haversine distance, which properly handles distance between lat/long coordinates (converted to radians)
+  * Tuned HDBScan so it produces 1 output cluster with the desired number of stops (all other stops are labelled as outliers)
 
 * More information on these functions can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
 
@@ -220,17 +225,37 @@ This method returns the original, full POI dataframe sorted based on the user's 
 
   ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ClusteringImpact_Ex2.png)
 
+
+
 #### Stage 5: Find Optimal Route
 
 Now that we have a set of stops to include in our walk, we need to plot the best route between those stops.  This is an optimization problem and, specifically, a type of classic problem known as the Travelling Salesman Problem (TSP).  
 
 ##### Travelling Salesman Problem Overview
 
+Here is a good overview of the problem from https://developers.google.com/optimization/routing/tsp:
 
+> Back in the days when salesmen traveled door-to-door hawking vacuums and encyclopedias, they had to plan their routes, from house to house or city to city. The shorter the route, the better. Finding the shortest route that visits a set of locations is an exponentially difficult problem: finding the shortest path for 20 cities is much more than twice as hard as 10 cities.
+>
+> An exhaustive search of all possible paths would be guaranteed to find the shortest, but is computationally intractable for all but small sets of locations. For larger problems, optimization techniques are needed to intelligently search the solution space and find near-optimal solutions.
+
+The following diagram (also from the above google website) shows an example of trying to find the path between nodes with the lowest sum of weights
+
+![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/tsp.svg)
 
 ##### Option 1 to address: Genetic Algorithm
 
-The first tool I tried to use was a genetic algorithm
+The first tool I tried to use was a genetic algorithm.  I found a very clear example here, https://github.com/ZWMiller/PythonProjects/blob/master/genetic_algorithms/evolutionary_algorithm_traveling_salesman.ipynb (which I discovered through https://towardsdatascience.com/travel-time-optimization-with-machine-learning-and-genetic-algorithm-71b40a3a4c2), which I borrowed and slightly adapted.  
+
+The idea is that you 
+
+* generate a set of random guesses (possible order of stops)
+* for each guess, calculate the travel time between the stops (using geopy.distance.geodesic)
+* then find the best performing guess and select those to "breed" the next generation of guessses
+  * Combine elements of two "parent" guesses to create a new child guess
+  * include some amount of randomness for genetic diversity
+* loop a set number of times
+* track the best guess (lowest travel time)
 
 
 
@@ -240,22 +265,35 @@ This generated largely reasonable routes, but was VERY slow and not workable for
 
 https://developers.google.com/optimization/routing/tsp
 
+OR-Tools is an open source set of tools to solve optimization problems.  It uses combinatorial optimization to find the best solution to a problem out of a very large set of possible solutions.  
 
+It was easy to implement and very fast at returning routes.  Generally all the generated routes have made sense
 
-#### Stage 6: Display walk to user
+**Code**
 
-* 
+- specify a solver
+
+  - - tsp_size = # of stops
+    - num_routes (1 for our case)
+    - depot = start and end point (n/a for us)
+
+- ```routing = pywrapcp.RoutingModel(tsp_size, num_routes, depot)
+  routing = pywrapcp.RoutingModel(tsp_size, num_routes, depot)
+  ```
+
+- create a distance callback: The distance callback is a function that computes the distance between any two cities.
 
 #### Stage 7: add Find best walk feature
 
-"find best walk"
+Once all the other pieces were working, I wanted to add a "find best walk" option that would try to find a walk that most closely matched your interests without being tied to a starting point.  
 
-Called when user doesn't specify starting point.  Tries to find a cluster of relevant stops based on user interest and build a walk from there
-​    To simplify the problem, tries to find a cluster of relevant stops among the top 20 best matches
-​    Then extracts the lat / long of the first of those clustered stops and returns it.  idea is that the find points in area function should include the other stops in area since they're highly similar
-​    (attempting to simplify problem)
+**Challenge**: Given that the "best matches" for a user's interests are spread out all over the city, how do I find a cluster of geographically close items?  Generally there wont' be enough points in one area to make a complete walk, so need to flesh out with additional stops
 
+**Approach**
 
+* The function tries to find a cluster of relevant stops among the top 20 best matches (or fewer if the user's preference only matched with a very small subset of stops)
+* extracts the lat / long of the first of those clustered stops and returns it as the starting point for a "regular" walk generation
+* idea is that the find_points_in_area function should include the other stops in area since they're highly similar (attempting to simplify problem)
 
 ### Web Application Design
 
@@ -271,9 +309,8 @@ Called when user doesn't specify starting point.  Tries to find a cluster of rel
 
 ### Testing
 
-* test method 
-
-
+* Developed a function that generates walks based on a variety of test cases (walk starting points, durations and user preferences) and logs the criteria, walk generated, total distance of walk, average distance between stops, average similarity score etc
+* Used this to compare performance before/after introduction changes to application (such as adding clustering)
 
 ## Project Deployment
 
