@@ -42,7 +42,7 @@ The resulting tool was packaged in a flask application with a google maps interf
 
 ### Flow of Application
 
-![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_Flow.png)
+![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_AppFlow.png)
 
 ## Data Sources
 
@@ -93,7 +93,7 @@ The resulting tool was packaged in a flask application with a google maps interf
 * Used PostgreSQL database hosted in Docker image
 * Used SQLAlchemy ORM to interact with Database (please refer to my blog post on setting this up https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d)
 
-
+![Data Gathering Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_GatherData.png)
 
 ### Application Flow: User requests walk
 
@@ -323,6 +323,8 @@ Once all the other pieces were working, I wanted to add a "find best walk" optio
 from http://www.patricksoftwareblog.com/wp-content/uploads/2017/06/Docker-Application-Architecture-2.png:
 
 ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/Docker-Application-Architecture-2.png)
+
+Details on Docker setup can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/DockerSetup.md
 
 ## Project Organization
 
