@@ -13,6 +13,7 @@ import time
 import numpy as np
 import json
 import pickle
+import re
 
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -35,10 +36,10 @@ def get_descriptors_for_poi(row):
     RETURNS: string
     '''
     descriptor = ""
-    keys = ['style', 'category']
+    keys = ['style', 'category','name']
     for key in keys:
         if row[key]!=None:
-            descriptor += row[key]
+            descriptor += " " + row[key]
     return descriptor
 
 def add_features(df):
@@ -76,13 +77,26 @@ poi_mapper = DataFrameMapper([
     ('descriptors',[CategoricalImputer(replacement="n/a")]),
 ], df_out=True)
 
+
+def text_preprocess(s):
+    '''
+    removes digits from string,
+    converts to lowercase
+    '''
+    s =  re.sub('\d+', '', s).lower()
+
+    return(s)
+
 # pipeline used for converting descriptors to word vector
+# remove numbers, return lower case
 pipe = Pipeline([
-    ('cv', CountVectorizer(ngram_range=(1,1),
-            lowercase=True,
-            max_features=5000,
-            strip_accents='unicode'))
+    ('cv', CountVectorizer(preprocessor = text_preprocess,
+        ngram_range=(1,1),
+        lowercase=True,
+        max_features=5000,
+        strip_accents='unicode'))
 ])
+
 
 df_poi = get_pois_as_df()
 df_features=df_poi.copy()
