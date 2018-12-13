@@ -40,6 +40,22 @@ The resulting tool was packaged in a flask application with a google maps interf
 
 
 
+## Overview of Application
+
+**Landing Page:**
+
+![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_LandingPage.png)
+
+**Example Generated Walk**
+
+![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_GeneratedWalk.png)
+
+**Example Stops**
+
+![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_ExampleBuildingStop.png)
+
+![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_ExamplePlaqueStop.png)
+
 ### Flow of Application
 
 ![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_AppFlow.png)
@@ -195,14 +211,17 @@ This method returns the original, full POI dataframe sorted based on the user's 
 #### Stage 4: Find best stops within range of Starting Coordinates
 
 * Now we need to trim this list back to reality and find the best matched stops within a reasonable distance of the walk starting point.
-
 * Assumed user could generally comfortably visit 12 POIs in an hour within a radius of 1 KM (1000 meters) from the starting point
+* More information on this function can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
+* But found that the generated walks were often unreasonably long and so decided to add an extra step to cluster the found "best" stops in a more concentrated geographic cluster.  The following image is a perfect example of a generated walk that could clearly have benefited from some clustering
 
-* But found that the generated walks were often unreasonably long and so decided to add an extra step to cluster the found "best" stops in a more concentrated geographic cluster.
+![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ExampleWalkBeforeClustering.png)
 
-  * HDBSCAN is a density-based clustering algorithm, which means that it tries to find areas of the dataset that have a higher density of points than the rest of the dataset.  It is generally more interpretable than K-Means and has fewer hyperparameters to tune
-  * It supports a variety of distance metrics, including Haversine distance, which properly handles distance between lat/long coordinates (converted to radians)
-  * Tuned HDBScan so it produces 1 output cluster with the desired number of stops (all other stops are labelled as outliers)
+**Clustering Overview**
+
+* HDBSCAN is a density-based clustering algorithm, which means that it tries to find areas of the dataset that have a higher density of points than the rest of the dataset.  It is generally more interpretable than K-Means and has fewer hyperparameters to tune
+* It supports a variety of distance metrics, including Haversine distance, which properly handles distance between lat/long coordinates (converted to radians)
+* Tuned HDBScan so it produces 1 output cluster with the desired number of stops (all other stops are labelled as outliers)
 
 * More information on these functions can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
 
