@@ -118,8 +118,19 @@ tbd
 #### Stage 4: Find best stops within range of Starting Coordinates
 
 * Now we need to trim this list back to reality and find the best matched stops within a reasonable distance of the walk starting point.
+
 * Assumed user could generally comfortably visit 12 POIs in an hour within a radius of 1 KM (1000 meters) from the starting point
-* More information on this function can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
+
+* But found that the generated walks were often unreasonably long and so decided to add an extra step to cluster the found "best" stops in a more concentrated geographic cluster.
+
+  * used HDBSCAN which can use geographic (haversine) distance rather than simple Euclidean disance ("flat earth").  Tuned it so it produces 1 output cluster with the desired number of stops (all other stops are labelled as outliers)
+
+* More information on these functions can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
+
+* Adding clustering made a statistically significant reduction in the total distance of the walks.  Before clustering, the average distance for a 1 hour walk (with distance of 1km/hr) was 4794.75 m, while after clustering, the average distance was 3,351m.   According to the T-Test, we would have only a .00014% chance of observing this large a difference in route distances if there were no difference
+
+  ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ImpactofClusteringonWalkDistance.png)
+
 
 #### Stage 5: Find Optimal Route
 
@@ -149,6 +160,12 @@ Called when user doesn't specify starting point.  Tries to find a cluster of rel
   * centering label on marker
   * getting dynamic popups for each stop
 * Bootstrap for form design
+
+
+
+### Testing
+
+* test method 
 
 
 
