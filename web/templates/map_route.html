@@ -42,16 +42,29 @@
               var contentString=stop_text[i-1];
               console.log(contentString)
 
+              var markerIcon = {
+                  url: stop_icons[i-1],
+                  scaledSize: new google.maps.Size(40, 40),
+                  // origin: new google.maps.Point(0, 0),
+                  // anchor: new google.maps.Point(0,0),
+                  labelOrigin: new google.maps.Point(20,15)
+                };
+
+
                 // starting point is already plotted
                 stop = new google.maps.Marker({
                     position: stopLatLng,
                     map: map,
                     title: 'Stop ' + i,
 
-                    icon: {
-                      url: stop_icons[i-1]
-                    },
-                    label:  '# ' + i
+                    icon: markerIcon,
+                    label: {
+                      text: '# ' + i,
+                      color: "#000000",
+                      fontSize: "14px",
+                      fontWeight: "bold"
+                    }
+
                 });
 
                 // use closure to allow different text for different stops

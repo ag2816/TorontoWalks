@@ -64,13 +64,19 @@
             <!-- <small id="durationHelp" class="form-text text-muted">Approximately how long would you like your walk to last?</small> -->
           </div>
 
-          <!-- <div class="form-group">
-              <label for="duration">Click anywhere on the map below to set your starting point</label>
-              <input hidden name="latitude" id="latitude" value="43.647273"/>
-              <input  hidden name="longitude" id="longitude" value ="-79.386560" />
-            </div> -->
-            <h6>Click anywhere on the map below to set your starting point</h6>
-            <button type="submit" class="btn btn-success">Create my walk!</button>
+          <div class="form-group">
+            <label for="duration">Starting Point:</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="starting_pt_radio" id="starting_pt_fixed" value="starting_pt_fixed" checked="checked">
+              <label class="form-check-label" for="starting_pt_fixed">Fixed</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="starting_pt_radio" id="starting_pt_random" value="starting_pt_random">
+              <label class="form-check-label" for="starting_pt_random">Surprise Me!</label>
+            </div>
+            <small id="durationHelp" class="form-text text-muted">If you selected fixed, please click anywhere on the map below to set your starting point</small>
+          </div>
+          <button type="submit" class="btn btn-success">Create my walk!</button>
       <!-- <p><input type="submit" value="Submit" /></p> -->
     </form>
 
