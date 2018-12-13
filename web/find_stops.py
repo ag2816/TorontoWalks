@@ -1,4 +1,6 @@
-## COllection of methods to find stops for the walk
+## Collection of methods to find stops for the walk
+
+
 import pandas as pd
 import numpy as np
 from geopy.geocoders import Nominatim # convert an address into latitude and longitude values
@@ -19,25 +21,7 @@ def find_similarity(df_features, df_user,  df_poi, sim_method='cosine_similarity
     '''
     df_poi['sim_rating'] = 0
 
-    # types_weight_percent = 0.6
-    # prefs_weight_percent = 0.2
-    # ages_weight_percent = 0.2
-
     if sim_method =='cosine_similarity':
-        # print('cosine_similarity')
-        # avail_interests = list(df_features.columns)
-        # types_list = [i for i, x in enumerate(avail_interests) if 'poi_type_' in x]
-        # types_sim=cosine_similarity(df_features.iloc[:,types_list], df_user.iloc[:,types_list])
-        #
-        # prefs_list = [i for i, x in enumerate(avail_interests) if 'pref_' in x]
-        # prefs_sim = cosine_similarity(df_features.iloc[:,prefs_list], df_user.iloc[:,prefs_list])
-        #
-        # ages_list = [i for i, x in enumerate(avail_interests) if 'build_century_' in x]
-        # ages_sim = cosine_similarity(df_features.iloc[:,ages_list], df_user.iloc[:,ages_list])
-        #
-        # #print(types_sim, prefs_sim, ages_sim)
-        #
-        # cosine_sim=(types_sim * types_weight_percent) + (prefs_sim *prefs_weight_percent) + (ages_sim *ages_weight_percent)
 
         cosine_sim = cosine_similarity(df_features,df_user)
         user_matches = pd.DataFrame(cosine_sim, columns=['user_match']) # convert to df for ease
@@ -100,8 +84,6 @@ def find_points_in_area(df, lat, long, num_points, max_distance, inflate_amount 
     prev_coord = (0,0) # sometimes have two points at same lat/long -- don't count as an extra stop
     prev_coords = set({})
     buffered_num_pts = num_points * inflate_amount
-
-
 
     for ix, row in df.iterrows():
 

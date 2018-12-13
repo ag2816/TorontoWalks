@@ -157,24 +157,24 @@ def create_walking_route(starting_lat, starting_long, duration, prefs, user_inte
     # df_features = pickle.load(open("df_features.pkl","rb"))
     # df_poi = pickle.load(open("df_poi.pkl","rb"))
     # avail_interests= pickle.load(open("avail_interests.pkl","rb"))
-    df_poi = get_pois_as_df()
-    df_features=df_poi.copy()
+    df_poi = get_pois_as_df() # this stores the full info about each POI (we need to produce meaningful Stop info)
+    df_features=df_poi.copy() # this will store our vectorized interests
     poi_mapper.fit(df_features)
     df_features= poi_mapper.transform(df_features)
 
     avail_interests = list(df_features.columns)
     avail_interests.remove('descriptors')
 
-    # vectorize descriptors
+    # vectorize descriptors (text vectorizer based on Category, Architectural Style and stop name)
     pipe_desc = pipe.fit(df_features['descriptors'])
     df_trans = transform_pipeline_for_column(df_features['descriptors'], pipe_desc)
+    # merge back into dataframe produced by dataframe mapper (POITypes and Build Century)
     df_features.drop(columns='descriptors', inplace=True)
     df_features = pd.concat([ df_trans, df_features], axis=1)
-    # order to match user prefs!
+    # sort to make sure column order is consistent with user prefs (gets mixed up during concat operation above)
     df_features=df_features.reindex(sorted(df_features.columns), axis=1)
-    # comment here
 
-    # create user interest vector
+    # create user interest vector using trained pipeline
     df_user = get_user_profile(avail_interests, user_interests, prefs, pipe)
 
     # calculate similiarity between user prfs and POIs

@@ -1,9 +1,12 @@
+# This code uses a Genetic Algorithm to try to solve the Travelling Salesman problem
+# Code was borrowed and slightly adapted from https://github.com/ZWMiller/PythonProjects/blob/master/genetic_algorithms/evolutionary_algorithm_traveling_salesman.ipynb
 
 import pandas as pd
 import numpy as np
 from geopy.geocoders import Nominatim # convert an address into latitude and longitude values
 import geopy.distance
 import geocoder
+
 
 def create_guess(walk_stops):
     """
@@ -138,9 +141,6 @@ def make_children(old_generation, children_per_couple=1):
             next_generation.append(make_child(parent, old_generation[-ix-1]))
    # print(next_generation)
     return next_generation
-
-
-# In[24]:
 
 
 def evolve_to_solve(current_generation, max_generations, take_best_N, take_random_N,
