@@ -5,7 +5,7 @@ Generate walks around Toronto to suit a user's preferred starting point, amount 
 
 ## Problem Statement
 
-One of my favourite pass times is to wander through a new neighbourhood or area of the city I haven't seen before and discover interesting buildings and sites.  However, after a while, it can be hard to think of new places to explore or to plan a route that's likely to include something interesting.  This tool will attempt to address that issue by generating custom walk routes for users depending on
+One of my favourite pass times is to wander through a new neighbourhood or area of the city I haven't seen before and discover interesting buildings and sites.  However, after a while, it can be hard to think of new neighbourhoods to explore or to plan a route that's likely to include something I haven't seen before.  This tool will attempt to address that issue by generating custom walk routes for users depending on
 
 - where they want to start their walk
 - how much time they have
@@ -13,54 +13,49 @@ One of my favourite pass times is to wander through a new neighbourhood or area 
 
 ## Executive Summary
 
-TorontoWalks is a walk generator that generates suggested walking routes based on user interests, starting point and desired walk duration.  The database of Toronto Points of Interest (POIs) was collected by web-scraping several websites (ACOToronto, TorontoPlaques, Archidont) and by using city of Toronto Open Data (public art works).  The success of the generated walks is measured primarily by walk distance (is it achievable in time allotted?) and measure of similarity to user preferences.
+TorontoWalks is a walk generator that generates suggested walking routes based on user interests, starting point and desired walk duration.  The database of Toronto Points of Interest (POIs) was collected by web-scraping several websites (ACOToronto, TorontoPlaques, Archidont etc) and by using city of Toronto Open Data (public art works).  
 
-The main challenges in developing this tool were:
+The main steps involved in developing this tool were:
 
-1) gathering data
+1) Gathering data
 
 2) Preparing the data and user preferences
 
-3) Measure similarity between POIs and user interests
+3) Measuring similarity between POIs and user interests
 
-4) find "best matched" stops within reasonable distance of starting point
+4) Finding "best matched" stops within reasonable distance of starting point
 
-5) Plot optimal route between stops (Travelling Salesman Problem)
+5) Plotting optimal route between stops (Travelling Salesman Problem)
 
 The success of the generated walks is measured primarily by walk distance (is it achievable in time allotted?) and measure of similarity to user preferences.  By this measure, adding a step to cluster the stops helped improve the quality of generated walks.  Google OR Tools was a fast and efficient tool used to plot the optimal route
 
-The resulting tool was packaged in a flask application with a google maps interface for picking the starting point and plotting the generated route
-
-## Notes
-
-- Project-related blog entries:
-  - how I used SQLAlchemy ORM to set up the database can be found here: https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d
-  - How to match up lat/long with specific neighbourhoods defined in a shape file: https://medium.com/dataexplorations/working-with-open-data-shape-files-using-geopandas-how-to-match-up-your-data-with-the-areas-9377471e49f2
-  - How to create choropleth maps in Altair: https://medium.com/dataexplorations/creating-choropleth-maps-in-altair-eeb7085779a1
-
-
+The resulting tool was packaged in a flask application with a google maps interface for picking the starting point and plotting the generated route.  The application is currently hosted in 3 docker images on DigitalOcean.
 
 ## Overview of Application
 
 **Landing Page:**
 
+The user enters their interests (most influential is whether they are interested in buildings, historical plaques or public art).  They can also enter free text in the interests field -- this could be an architectural style, historical figure in Toronto history or a category of interest (i.e. sports, explorers etc)
+
 ![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_LandingPage.png)
 
 **Example Generated Walk**
+
+The generated walk is plotted on a Google Map with color coded markers according to the stop type (building, plaque or art work)
 
 ![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_GeneratedWalk.png)
 
 **Example Stops**
 
+Clicking on one of the markers opens a information pane with more information about that Point of Interest (depending on what is available for that POI).  This can include the address, architectural style, build year, a picture and a more detailed description.  
+
+The following screenshots show an example information page for a building and for a Historical Plaque
+
 ![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_ExampleBuildingStop.png)
 
 ![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_ExamplePlaqueStop.png)
 
-### Flow of Application
-
-![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_AppFlow.png)
-
-## Data Sources
+### Data Sources
 
 - **ACOToronto WebSite**: The ACOToronto website contains the TOBuilt database -- an open source database of images and information about buildings and structures in toronto.
   http://www.acotoronto.ca/tobuilt_new_detailed.php
@@ -69,14 +64,7 @@ The resulting tool was packaged in a flask application with a google maps interf
 - **Cabbagetown People**: http://www.cabbagetownpeople.ca/biographies/plaquees/ Information about plaques in Cabbagetown
 - **Toronto Public Art**: City of Toronto Open Data https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#86b0f307-216b-3fe1-4653-c32ed9b6bf5c
 
-## Database Design
-
-![ERD](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_ERD.png)
-
-- Database: PostgreSQL hosted on Docker on Digital Ocean
-- Use SQLAlchemy ORM to interact with database
-
-## Technologies Used
+### Technologies Used
 
 - Python
 - Pandas
@@ -92,22 +80,27 @@ The resulting tool was packaged in a flask application with a google maps interf
 - HDBSCANclustering
 - Flask 
 - Google Maps Api
-- 
 
 ## Project Notes
+
+### Flow of Application
+
+This flow chart outlines the major steps involved in generating a custom walk.  More detail on each of these steps is included below
+
+![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_AppFlow.png)
+
 ### Preparation Stage: Gathering Data
 
 * A more detailed overview of the websites scraped for this project, and what challenges I encountered, can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/Web%20Scraping%20Process%20and%20Challenges.md
-* Feature Engineering
-  * Build Century / Build Decade
-  * Simple POI Type (art, plaque, building)
-* Data Cleaning
+* Most of the data was gathered by web-scraping websites with good information about Toronto landmarks (listed above in Sources).  I used BeautifulSoup for most of it, but the ACOToronto.ca website had a continuous scroll-to-load-more functionality that required the use of Selenium.  In addition, information on public art works was loaded from Toronto Open Data
+* Once the data was gathered, I pushed it through a cleanup pipeline to
   * remove duplicates
-  * fix addresses (often incomplete, either with a missing city or Province or with an invalid street number (i.e. 0 Yonge Street, likely entered as a placeholder)).  When I first tried to get lats adn longs, found that a number of sites in York had been geo-coded into New York State
+  * fix addresses (often incomplete, either with a missing city or Province or with an invalid street number (i.e. 0 Yonge Street, likely entered as a placeholder)).  When I first tried to get lats and longs, found that a number of sites in York had been geo-coded into New York State
   * Use GeoCoder to lookup latitude and longitude for each POI
-  * store in Database
-* Used PostgreSQL database hosted in Docker image
-* Used SQLAlchemy ORM to interact with Database (please refer to my blog post on setting this up https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d)
+  * engineer some new features
+    * Build Decade
+    * Simple POI type (building, plaque or art)
+  * store in Database (PostgreSQL database hosted on Docker Image).  
 
 ![Data Gathering Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_GatherData.png)
 
@@ -119,15 +112,16 @@ The resulting tool was packaged in a flask application with a google maps interf
 * Pipeline --> uses CountVectorizer to convert POI Architectural Style, Category and Name to vector with 0/1 for whether word is present or not. 
   * not every POI has a style or category
   * don't want to present user with a hundred different checkboxes for possible architectural styles and categories --> prefer to let them type in their interests and try to find a match based on that
+  * Count Vectorizer -- removed digits, converted text to lowercase, and took top 5000 terms
 
-#### Stage 2: Get user prefs
+#### Stage 2: Get user interests
 
 * user fills out form 
 * create a vector with same columns and dimensions as for POIs above (feed through same trained pipeline)
 
 #### Stage 3: Measure Similarity
 
-Challenge: need to measure similarity between user's stated preferences and each available POI to try to find the closest matches
+**Challenge**: need to measure similarity between user's stated preferences and each available POI to try to find the closest matches
 
 ##### Recommender Engines
 
@@ -164,7 +158,7 @@ The following graphic (from http://blog.christianperone.com/2013/09/machine-lear
 
 ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/CosineSimilarityDemo.png)
 
-The image below, the "sentences" are "points of interest" and the formula is measuring similarity between terms like build century, poi type (art, building or plaque) and words used in the name, style or category)
+In the image below, the "sentences" represent "points of interest" and the formula is measuring similarity between terms like build century, poi type (art, building or plaque) and words used in the name, style or category)
 
 ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/CosineSimilarityVectorSpaceDemo.png)
 
@@ -314,6 +308,14 @@ Once all the other pieces were working, I wanted to add a "find best walk" optio
 * extracts the lat / long of the first of those clustered stops and returns it as the starting point for a "regular" walk generation
 * idea is that the find_points_in_area function should include the other stops in area since they're highly similar (attempting to simplify problem)
 
+**Results**
+
+![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ExampleWalk_SurpriseMe_BeauxArts_StartingPage.png)
+
+![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ExampleWalk_SurpriseMe_BeauxArts_Results.png)
+
+![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ExampleWalk_SurpriseMe_BeauxArts_SampleStop.png)
+
 ### Web Application Design
 
 * used flask
@@ -324,7 +326,12 @@ Once all the other pieces were working, I wanted to add a "find best walk" optio
   * getting dynamic popups for each stop
 * Bootstrap for form design
 
+## Database Design
 
+![ERD](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_ERD.png)
+
+- Database: PostgreSQL hosted on Docker on Digital Ocean
+- Use SQLAlchemy ORM to interact with database
 
 ### Testing
 
@@ -349,3 +356,10 @@ Details on Docker setup can be found here: https://github.com/ag2816/TorontoWalk
 
 - used Trello to manage tasks
 - used LucidChart to create flow chart of planned application flow and Database entity relationship diagram (ERD)
+
+## Notes
+
+- Project-related blog entries:
+  - how I used SQLAlchemy ORM to set up the database can be found here: https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d
+  - How to match up lat/long with specific neighbourhoods defined in a shape file: https://medium.com/dataexplorations/working-with-open-data-shape-files-using-geopandas-how-to-match-up-your-data-with-the-areas-9377471e49f2
+  - How to create choropleth maps in Altair: https://medium.com/dataexplorations/creating-choropleth-maps-in-altair-eeb7085779a1
