@@ -27,7 +27,7 @@ The main steps involved in developing this tool were:
 
 5) Plotting optimal route between stops (Travelling Salesman Problem)
 
-The success of the generated walks is measured primarily by walk distance (is it achievable in time allotted?) and measure of similarity to user preferences.  By this measure, adding a step to cluster the stops helped improve the quality of generated walks.  Google OR Tools was a fast and efficient tool used to plot the optimal route
+The success of the generated walks is measured primarily by walk distance (is it achievable in time allotted?) and measure of similarity to user preferences.  I used cosine-similarity to find the best matches between a user’s stated interests and the features stored for each Point of Interest. I then found the most similar stops within a reasonable radius of the starting point and used HDBScan clustering to find a geographically constrained subset of stops. Finally I used Google OR Tools to plot the optimal route
 
 The resulting tool was packaged in a flask application with a google maps interface for picking the starting point and plotting the generated route.  The application is currently hosted in 3 docker images on DigitalOcean.
 
