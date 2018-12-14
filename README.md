@@ -138,17 +138,9 @@ There are two main types of Recommender Engines:
 
  **Implications for TorontoWalks**
 
-The Walk Generator is somewhat similar to a content-based recommender engine, where we have a matrix of features (keywords) about each POI.  But we do NOT have access to user ratings of POIs.  Perhaps over time, we could develop that history by saving user generated walks and providing a way to reject or rate the stops/walk.  But, for now, the application uses a simplified version of content filtering by generating a vector based on the user's stated preferences and comparing that to each POI using Cosine similarity.
+The Walk Generator is somewhat similar to a content-based recommender engine, where we have a matrix of features (keywords) about each POI.  But we do NOT have access to user ratings of POIs.  Perhaps over time, we could develop that history by saving user generated walks and providing a way to like/dislike each stops.  But, for now, the application uses a simplified version of content filtering by generating a vector based on the user's stated preferences and comparing that to each POI using Cosine similarity.
 
 ##### Cosine Similarity
-
-Will use Cosine Similarity to do this
-
-Available libraries
-
-- sklearn cosine_similarity
-- spatial.distance.cosine
-- spatial.distance.hamming
 
 This is the formula for Cosine Similarity from Wikipedia
 
@@ -162,11 +154,9 @@ In the image below, the "sentences" represent "points of interest" and the formu
 
 ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/CosineSimilarityVectorSpaceDemo.png)
 
-
-
 ##### Find Similarity Function
 
-This is calculated in the find_similarity() function in find_stops.py.  This method accepts a sim_method argument to indicate which of the above tools should be used to calculate the similarity.  The application is currently using SKLearn cosine_similarity
+Similarity between user interests and POIs is calculated in the find_similarity() function in find_stops.py.  The application is currently using SKLearn cosine_similarity
 
 **Input**
 
@@ -187,7 +177,7 @@ cosine_sim = cosine_similarity(df_features,df_user)
 user_matches = pd.DataFrame(cosine_sim, columns=['user_match']) # convert to df for ease
 ```
 
-Now each can add that as sim_rating column to our original dataframe
+Now each can store that as a new sim_rating column in our original dataframe
 
 ```
 df_poi['sim_rating'] = user_matches
@@ -205,11 +195,14 @@ This method returns the original, full POI dataframe sorted based on the user's 
 #### Stage 4: Find best stops within range of Starting Coordinates
 
 * Now we need to trim this list back to reality and find the best matched stops within a reasonable distance of the walk starting point.
-* Assumed user could generally comfortably visit 12 POIs in an hour within a radius of 1 KM (1000 meters) from the starting point
-* More information on this function can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
-* But found that the generated walks were often unreasonably long and so decided to add an extra step to cluster the found "best" stops in a more concentrated geographic cluster.  The following image is a perfect example of a generated walk that could clearly have benefited from some clustering
+* The calculation is based on the assumptions that a user could comfortably visit 12 POIs in an hour within a radius of 1 KM (1000 meters) from the starting point
+* More detailed information on this function can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
+* This worked well and returned decent walks.  But sometimes the stops ended up clustered on the extreme edges of the available radius around the starting point, making for a much longer walk than desired.
+* The following image is a perfect example of a generated walk that could clearly have benefited from some clustering
 
 ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ExampleWalkBeforeClustering.png)
+
+* My solution was to add an extra step to cluster the found "best" stops in a more concentrated geographic cluster. 
 
 **Clustering Overview**
 
@@ -217,17 +210,17 @@ This method returns the original, full POI dataframe sorted based on the user's 
 * It supports a variety of distance metrics, including Haversine distance, which properly handles distance between lat/long coordinates (converted to radians)
 * Tuned HDBScan so it produces 1 output cluster with the desired number of stops (all other stops are labelled as outliers)
 
-* More information on these functions can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
+* More detailed information on the actual clustering function used can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/FindPointsWithinDistance.md
 
   ##### Impact of Adding Clustering
 
-* Adding clustering made a statistically significant reduction in the total distance of the walks.  Before clustering, the average distance for a 1 hour walk (with distance of 1km/hr) was 4794.75 m, while after clustering, the average distance was 3,351m.   According to the T-Test, we would have only a .00014% chance of observing this large a difference in route distances if there were no difference
+* Adding clustering made a statistically significant reduction in the total distance of the walks.  Before clustering, the average distance for a 1 hour walk (with distance of 1km/hr) was 4794.75 m, while after clustering, the average distance was 3,351m.   According to the T-Test, we would have only a .00014% chance of observing this large a difference in route distances if the two methods were equivalent
 
-  ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ImpactofClusteringonWalkDistance.png)
+  ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ClusteringImpact_ReducedWalkDistance.png)
 
   **Example walks:**
 
-  * green dots are the excluded stops
+  * The following screenshots show examples of clustering applied to walks.  The green dots are the excluded stops, while the blue dots are the clustered stops included in the walk.  
   * Walk 1: starting King St / Simcoe for 2 hour walk
 
   ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ClusteringImpact_Ex1.png)
@@ -270,9 +263,7 @@ The idea is that you
 * loop a set number of times
 * track the best guess (lowest travel time)
 
-
-
-This generated largely reasonable routes, but was VERY slow and not workable for a web application.  So I did some more research and came across Google OR Tools
+This generated largely reasonable routes, but was very slow and not workable for a web application.  So I did some more research and came across Google OR Tools
 
 ##### Option 2: Google OR Tools
 
@@ -296,11 +287,11 @@ It was easy to implement and very fast at returning routes.  Generally all the g
 
 - create a distance callback: The distance callback is a function that computes the distance between any two cities.
 
-#### Stage 7: add Find best walk feature
+#### Stage 7: Add "Find best walk" feature
 
 Once all the other pieces were working, I wanted to add a "find best walk" option that would try to find a walk that most closely matched your interests without being tied to a starting point.  
 
-**Challenge**: Given that the "best matches" for a user's interests are spread out all over the city, how do I find a cluster of geographically close items?  Generally there wont' be enough points in one area to make a complete walk, so need to flesh out with additional stops
+**Challenge**: Given that the "best matches" for a user's interests are spread out all over the city, how do I find a cluster of geographically close items?  Generally there won't be enough points in one area to make a complete walk, so need to flesh out with additional stops
 
 **Approach**
 
