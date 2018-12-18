@@ -13,13 +13,9 @@
 </style>
 
 {% block content %}
-  <!-- <body>
-    <h2>Your custom walk:</h2> -->
     <div id="map"></div>
     <script>
 
-
-// TODO: look into callbacks for infowindow
 
     function placeWalkStops(stops,map, stop_text, stop_icons) {
       console.log(stops)
@@ -34,25 +30,21 @@
             console.log("placing stops")
             console.log(stops[i][0])
             console.log(stops[i][1])
-            // console.log({{stop_text | safe}})
 
             var stopLatLng = {lat:stops[i][0], lng:stops[i][1]};
             walkRootCoordinates.push(stopLatLng)
             if (i > 0){
+              // skip the starting stop (already plotted)
               var contentString=stop_text[i-1];
               console.log(contentString)
 
               var markerIcon = {
                   url: stop_icons[i-1],
                   scaledSize: new google.maps.Size(40, 40),
-                  // origin: new google.maps.Point(0, 0),
-                  // anchor: new google.maps.Point(0,0),
                   labelOrigin: new google.maps.Point(20,15)
                 };
 
-
-                // starting point is already plotted
-                stop = new google.maps.Marker({
+              stop = new google.maps.Marker({
                     position: stopLatLng,
                     map: map,
                     title: 'Stop ' + i,
@@ -87,9 +79,6 @@
         });
 
         walkPath.setMap(map);
-
-
-
     }
 
       function initMap() {
