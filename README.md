@@ -13,13 +13,13 @@ One of my favourite pass times is to wander through a new neighbourhood or area 
 
 ## Executive Summary
 
-TorontoWalks is a walk generator that generates suggested walking routes based on user interests, starting point and desired walk duration.  The database of Toronto Points of Interest (POIs) was collected by web-scraping several websites (ACOToronto, TorontoPlaques, Archidont etc) and by using city of Toronto Open Data (public art works).  
+TorontoWalks is a walk generator that generates suggested walking routes based on user interests, starting point and desired walk duration.  The database of Toronto Points of Interest (POIs) was collected by web-scraping several websites (ACOToronto, TorontoPlaques and Cabbagetown People) and by using city of Toronto Open Data (public art works).  
 
 The main steps involved in developing this tool were:
 
 1) Gathering data
 
-2) Preparing the data and user preferences
+2) Preparing the data and user preferences (vectorization + shaping into a feature matrix)
 
 3) Measuring similarity between POIs and user interests
 
@@ -27,27 +27,27 @@ The main steps involved in developing this tool were:
 
 5) Plotting optimal route between stops (Travelling Salesman Problem)
 
-The success of the generated walks is measured primarily by walk distance (is it achievable in time allotted?) and measure of similarity to user preferences.  I used cosine-similarity to find the best matches between a user’s stated interests and the features stored for each Point of Interest. I then found the most similar stops within a reasonable radius of the starting point and used HDBScan clustering to find a geographically constrained subset of stops. Finally I used Google OR Tools to plot the optimal route
+The success of the generated walks is measured primarily by walk distance (is it achievable in time allotted?) and measure of similarity to user preferences.  I used cosine-similarity to find the best matches between a user’s stated interests and the features stored for each Point of Interest. I then found the most similar stops within a reasonable radius of the starting point and used HDBScan clustering to find a geographically constrained subset of stops. Finally I used Google OR Tools to plot the optimal route between those stops.
 
-The resulting tool was packaged in a flask application with a google maps interface for picking the starting point and plotting the generated route.  The application is currently hosted in 3 docker images on DigitalOcean.
+The resulting tool was packaged in a flask application with a google maps interface for picking the starting point and plotting the generated route.  The application is currently hosted in 3 docker images on DigitalOcean (http://http://68.183.55.22:8000).  My final presentation can be viewed here (https://github.com/ag2816/TorontoWalks/blob/master/docs/TorontoWalksCapstonePresentation.pdf)
 
 ## Overview of Application
 
 **Landing Page:**
 
-The user enters their interests (most influential is whether they are interested in buildings, historical plaques or public art).  They can also enter free text in the interests field -- this could be an architectural style, historical figure in Toronto history or a category of interest (i.e. sports, explorers etc)
+This is where users can enter their interests.  The most important setting is whether they are interested in buildings, historical plaques or public art.  Optionally, they can also enter free text in the interests field -- this could be an architectural style, historical figure in Toronto history or a category of interest (i.e. sports, explorers etc).  Finally, they can choose the desired walk duration and click on the map to set their starting point (or choose "surprise me!" to find the 'best' matched walk for their interests)
 
 ![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_LandingPage.png)
 
 **Example Generated Walk**
 
-The generated walk is plotted on a Google Map with color coded markers according to the stop type (building, plaque or art work)
+The generated walk is plotted on a Google Map with color coded markers according to the stop type (building, plaque or art work).  The polyline api is used to join up the stops to show the walking route
 
 ![TorontoWalks_Flow](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/TorontoWalks_GeneratedWalk.png)
 
 **Example Stops**
 
-Clicking on one of the markers opens a information pane with more information about that Point of Interest (depending on what is available for that POI).  This can include the address, architectural style, build year, a picture and a more detailed description.  
+Clicking on one of the markers opens a information pane with more information about that Point of Interest (depending on what information is available for that POI).  This can include the address, architectural style, build year, a picture and a more detailed description.  
 
 The following screenshots show an example information page for a building and for a Historical Plaque
 
@@ -73,13 +73,15 @@ The following screenshots show an example information page for a building and fo
 - Beautiful Soup - Web Scraping
 - Selenium - web scraping of scroll-to-load-more web pages
 - Postgres database
-- Docker for hosting database and flask web app
+- Docker for hosting database, nginx and flask web app
 - Geocoder to get lats/longs of addresses
 - SKLearn pipelines
 - DataFrameMapper
-- HDBSCANclustering
+- HDBSCAN clustering
 - Flask 
 - Google Maps Api
+- Altair -- plotting
+- Folium -- plotting
 
 ## Project Notes
 
@@ -92,7 +94,8 @@ This flow chart outlines the major steps involved in generating a custom walk.  
 ### Preparation Stage: Gathering Data
 
 * A more detailed overview of the websites scraped for this project, and what challenges I encountered, can be found here: https://github.com/ag2816/TorontoWalks/blob/master/docs/Web%20Scraping%20Process%20and%20Challenges.md
-* Most of the data was gathered by web-scraping websites with good information about Toronto landmarks (listed above in Sources).  I used BeautifulSoup for most of it, but the ACOToronto.ca website had a continuous scroll-to-load-more functionality that required the use of Selenium.  In addition, information on public art works was loaded from Toronto Open Data
+* Most of the data was gathered by web-scraping websites with good information about Toronto landmarks (listed above in Sources).  I used BeautifulSoup for most of it, but the ACOToronto.ca website had a continuous scroll-to-load-more functionality that required the use of Selenium.  
+* Public Artwork data was loaded from Toronto Open Data
 * Once the data was gathered, I pushed it through a cleanup pipeline to
   * remove duplicates
   * fix addresses (often incomplete, either with a missing city or Province or with an invalid street number (i.e. 0 Yonge Street, likely entered as a placeholder)).  When I first tried to get lats and longs, found that a number of sites in York had been geo-coded into New York State
@@ -108,16 +111,17 @@ This flow chart outlines the major steps involved in generating a custom walk.  
 
 #### Stage 1: Prepare Data
 
-* DataFrameMapper --> label binarizes Simple POI Type and build Century
-* Pipeline --> uses CountVectorizer to convert POI Architectural Style, Category and Name to vector with 0/1 for whether word is present or not. 
-  * not every POI has a style or category
-  * don't want to present user with a hundred different checkboxes for possible architectural styles and categories --> prefer to let them type in their interests and try to find a match based on that
-  * Count Vectorizer -- removed digits, converted text to lowercase, and took top 5000 terms
+* Information on the Points of Interest are retrieved from the database and fed through the following steps
+  * **DataFrameMapper** --> label binarizes Simple POI Type and build Century
+  * **Pipeline** --> uses **CountVectorizer** to convert POI Architectural Style, Category and Name to vector with 0/1 for whether word is present or not
+    * Count Vectorizer --> removed digits, converted text to lowercase, and took top 5000 terms
+* Why did I vectorize Architectural Style and Category (rather than leaving them as stand alone features)?
+  * In the approach I took, a style like "Beaux Arts" will be vectorized as "beaux" and "arts"
+  * There are pros and cons to each approach but I believe that this approach allows for more flexible matching on user interests and can be expanded to include additional information about the site included in the Name and Details.  In addition, I didn't want to present the user with 50+ checkboxes for all the different architectural styles included in the database.  This way, the user can enter their interests in free text and the tool will find both buildings that have "beaux" + "arts" but will also discover other "arts" related POIs
 
 #### Stage 2: Get user interests
 
-* user fills out form 
-* create a vector with same columns and dimensions as for POIs above (feed through same trained pipeline)
+* After user fills out the form on the web page, this is converted to a vector with the same columns and dimensions as for POIs above (feed through same trained pipeline)
 
 #### Stage 3: Measure Similarity
 
@@ -225,11 +229,9 @@ This method returns the original, full POI dataframe sorted based on the user's 
 
   ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ClusteringImpact_Ex1.png)
 
-  Walk 2: starting Avenue Road / Bloor for 2 hour walk
+  * Walk 2: starting Avenue Road / Bloor for 2 hour walk
 
-
-
-  ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ClusteringImpact_Ex2.png)
+    ![](https://github.com/ag2816/TorontoWalks/blob/master/docs/images/ClusteringImpact_Ex2.png)
 
 
 
@@ -263,7 +265,7 @@ The idea is that you
 * loop a set number of times
 * track the best guess (lowest travel time)
 
-This generated largely reasonable routes, but was very slow and not workable for a web application.  So I did some more research and came across Google OR Tools
+This generated largely reasonable routes, but was very slow and didn't lend itself to a web application.  So I did some more research and came across Google OR Tools
 
 ##### Option 2: Google OR Tools
 
@@ -291,11 +293,11 @@ It was easy to implement and very fast at returning routes.  Generally all the g
 
 Once all the other pieces were working, I wanted to add a "find best walk" option that would try to find a walk that most closely matched your interests without being tied to a starting point.  
 
-**Challenge**: Given that the "best matches" for a user's interests are spread out all over the city, how do I find a cluster of geographically close items?  Generally there won't be enough points in one area to make a complete walk, so need to flesh out with additional stops
+**Challenge**: Given that the "best matches" for a user's interests are spread out all over the city, how do I find a cluster of geographically close items?  Generally there won't be enough points in one area to make a complete walk, so it will have to be fleshed out with additional stops
 
 **Approach**
 
-* The function tries to find a cluster of relevant stops among the top 20 best matches (or fewer if the user's preference only matched with a very small subset of stops)
+* As for a "normal walk", the tool first measures similarity between the POIs and the user's specified interests.  But it then tries to find a cluster of relevant stops among the top 20 best matches (or fewer if the user's preference only matched with a very small subset of stops)
 * extracts the lat / long of the first of those clustered stops and returns it as the starting point for a "regular" walk generation
 * idea is that the find_points_in_area function should include the other stops in area since they're highly similar (attempting to simplify problem)
 
@@ -309,13 +311,12 @@ Once all the other pieces were working, I wanted to add a "find best walk" optio
 
 ### Web Application Design
 
-* used flask
-* google maps api to plot coordinates
+I packaged the application into a flask application so that I could deploy it on the internet.   I used the Google Maps api to plot the points on the map and the Google Maps polyline function to plot the route between the stops.   I used bootstrap to design the forms and Canva to create the logo
+
 * Challenges
   * changing size and color of markers
   * centering label on marker
   * getting dynamic popups for each stop
-* Bootstrap for form design
 
 ## Database Design
 
@@ -354,3 +355,9 @@ Details on Docker setup can be found here: https://github.com/ag2816/TorontoWalk
   - how I used SQLAlchemy ORM to set up the database can be found here: https://medium.com/dataexplorations/sqlalchemy-orm-a-more-pythonic-way-of-interacting-with-your-database-935b57fd2d4d
   - How to match up lat/long with specific neighbourhoods defined in a shape file: https://medium.com/dataexplorations/working-with-open-data-shape-files-using-geopandas-how-to-match-up-your-data-with-the-areas-9377471e49f2
   - How to create choropleth maps in Altair: https://medium.com/dataexplorations/creating-choropleth-maps-in-altair-eeb7085779a1
+- Capstone Presentation: https://github.com/ag2816/TorontoWalks/blob/master/docs/TorontoWalksCapstonePresentation.pdf
+
+# Planned Future Enhancements
+
+* Currently the route between stops is plotted based on shortest distance, which means it may go through buildings or across sections of the harbour.  This should be enhanced to plot the actual walking route
+* Allow users to provide feedback on stops so can improve recommendation engine
