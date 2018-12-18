@@ -113,7 +113,7 @@ This flow chart outlines the major steps involved in generating a custom walk.  
 
 * Information on the Points of Interest are retrieved from the database and fed through the following steps
   * **DataFrameMapper** --> label binarizes Simple POI Type and build Century
-  * **Pipeline** --> uses **CountVectorizer** to convert POI Architectural Style, Category and Name to vector with 0/1 for whether word is present or not
+  * **Pipeline** --> uses **CountVectorizer** to convert POI Architectural Style, Category and Name to create a vector with 0/1 for whether word is present or not (simple bag of words).  (see https://en.wikipedia.org/wiki/Vector_space_model) 
     * Count Vectorizer --> removed digits, converted text to lowercase, and took top 5000 terms
 * Why did I vectorize Architectural Style and Category (rather than leaving them as stand alone features)?
   * In the approach I took, a style like "Beaux Arts" will be vectorized as "beaux" and "arts"
@@ -285,9 +285,36 @@ It was easy to implement and very fast at returning routes.  Generally all the g
 
 - ```routing = pywrapcp.RoutingModel(tsp_size, num_routes, depot)
   routing = pywrapcp.RoutingModel(tsp_size, num_routes, depot)
+  search_parameters = pywrapcp.RoutingModel.DefaultSearchParameters()
+  # Create the distance callback.
+  dist_matrix=create_distance_matrix(walk_stops)
+  dist_callback = create_distance_callback(dist_matrix)
+  routing.SetArcCostEvaluatorOfAllVehicles(dist_callback)
+  
+  # Solve the problem.
+  assignment = routing.SolveWithParameters(search_parameters)
   ```
 
 - create a distance callback: The distance callback is a function that computes the distance between any two cities.
+
+```distance matrix
+def create_distance_matrix(locations):
+    # Create the distance matrix.
+    size = len(locations)
+    dist_matrix = {}
+
+    for from_node in locations.keys():
+        dist_matrix[from_node] = {}
+        for to_node in locations.keys():
+            x1 = locations.get(from_node)[0]
+            y1 = locations.get(from_node)[1]
+            x2 = locations.get(to_node)[0]
+            y2 = locations.get(to_node)[1]
+            dist_matrix[from_node][to_node]  = geopy.distance.geodesic((x1,y1), (x2,y2)).meters
+    return dist_matrix
+```
+
+
 
 #### Stage 7: Add "Find best walk" feature
 
@@ -311,12 +338,99 @@ Once all the other pieces were working, I wanted to add a "find best walk" optio
 
 ### Web Application Design
 
-I packaged the application into a flask application so that I could deploy it on the internet.   I used the Google Maps api to plot the points on the map and the Google Maps polyline function to plot the route between the stops.   I used bootstrap to design the forms and Canva to create the logo
+I packaged the application into a flask application and used the Google Maps api to plot the points on the map.  On page load on the map_route.html result page, I set up the google map and dropped the starting point marker.  Then I called the placewalkstops() javascript function to plot the walk stops.  **Note**: the double curly braces ({{<text>}}) contain information passed back from app.py
 
-* Challenges
-  * changing size and color of markers
-  * centering label on marker
-  * getting dynamic popups for each stop
+```PlaceWalkStops
+function initMap() {
+        var myLatLng = {lat: {{starting_lat}}, lng:{{starting_long}}};
+
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 14,
+          center: myLatLng
+        });
+
+        var marker = new google.maps.Marker({
+          position: myLatLng,
+          map: map,
+          title: 'Starting Point',
+          label: 'Start'
+        });
+      //  console.log({{ordered_stops | safe}})
+        placeWalkStops({{ordered_stops | safe }},map,{{stop_text}},{{stop_icons}});
+
+      }
+```
+
+For each stop, I created a javascript array (walkRootCoordinates) of the lat/long coordinates
+
+```create array
+var stopLatLng = {lat:stops[i][0], lng:stops[i][1]};
+walkRootCoordinates.push(stopLatLng)
+```
+
+Then I dropped the stop marker (I scaled up the size of the marker to allow a better chance of centering the label text on the marker and to match the size of the default start stop marker).  The url of the marker icon to use is passed back from app.py and colour coded according to the stop type (building, plaque or artwork)
+
+```drop marker
+var markerIcon = {
+  url: stop_icons[i-1],
+    scaledSize: new google.maps.Size(40, 40),
+    labelOrigin: new google.maps.Point(20,15)
+};
+
+stop = new google.maps.Marker({
+    position: stopLatLng,
+    map: map,
+    title: 'Stop ' + i,
+
+    icon: markerIcon,
+    label: {
+        text: '# ' + i,
+        color: "#000000",
+        fontSize: "14px",
+        fontWeight: "bold"
+    }
+});
+```
+
+ I had trouble at first getting the infowindow for each stop to contain information about that stop and not the last stop I loaded on the page.  The solution was to create the InfoWindow definition only once (before looping through the stops):
+
+```create InfoWindow
+ var infowindow = new google.maps.InfoWindow({
+       content: "holding" //content will be set later
+ });
+```
+
+
+
+And then use a closure with a listener to dynamically set the info window content depending on which stop is clicked
+
+```Listener
+// use closure to allow different text for different stops
+google.maps.event.addListener(stop, 'click', function(content) {
+    return function(){
+        infowindow.setContent(content);//set the content
+        infowindow.open(map,this);
+    }
+}(contentString));
+```
+
+
+
+Finally, I used Polyline to plot the route between the stops (currently based on shortest distance and not an actual walking route):
+
+```Polyline
+// Add path
+var walkPath = new google.maps.Polyline({
+        path: walkRootCoordinates,
+        geodesic: true,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 2
+ });
+walkPath.setMap(map);
+```
+
+
 
 ## Database Design
 
