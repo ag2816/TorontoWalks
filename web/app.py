@@ -233,6 +233,18 @@ def create_display_text(row):
 
     return  detail_html
 
+@app.route('/stylebyarea', methods=['POST', 'GET'])
+def stylebyarea():
+    return render_template('predominant_styles_by_neighbourhood.html')
+
+@app.route('/discover', methods=['POST', 'GET'])
+def discover():
+    return render_template('discover.html')
+
+@app.route('/about', methods=['POST', 'GET'])
+def about():
+    return render_template('about.html')
+
 
 @app.route('/result', methods=['POST', 'GET'])
 def result():
